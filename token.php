@@ -1,16 +1,12 @@
 <?php
-// ==================== CONFIG ====================
-define('API_BASE_URL', 'https://uat-cseapi.cse.lk');
-define('API_USERNAME', 'SCTestUser'); // Replace with actual username
-define('API_PASSWORD', '2d26tF&M!cqS'); // Replace with actual password
+require_once __DIR__ . '/config.php';
 
 // ==================== AUTH FUNCTION ====================
 function getAuthToken() {
-    $url = API_BASE_URL . '/token';
-    
+    $url = CSE_API_BASE_URL . '/token';
     $data = [
-        'username' => API_USERNAME,
-        'password' => API_PASSWORD,
+        'username' => CSE_API_USERNAME,
+        'password' => CSE_API_PASSWORD,
         'grant_type' => 'password'
     ];
     

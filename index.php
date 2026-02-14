@@ -550,31 +550,26 @@
 
     <div class="form-container">
         <form id="cdsAccountForm">
-            
             <!-- Form Steps Container -->
             <div class="form-steps-container">
                 <!-- Step 1: Personal Information -->
                 <div class="form-step active" id="step-1">
                     <div class="form-section">
                         <h2 class="section-title"><i class="fas fa-user"></i> Personal Information</h2>
-                         
-<!-- <div class="resume-section">
-    <label for="resume_account_id">Have an existing Account ID?</label>
-    <input type="text" id="resume_account_id" placeholder="Enter Account ID">
-    <button type="button" onclick="resumeSession()">Resume Application</button>
-</div> -->
                         
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="Title" class="required">Title</label>
                                 <select id="Title" name="Title" required>
                                     <option value="">Select Title</option>
-                                    <option value="MR.">Mr</option>
-                                    <option value="MRS.">Mrs</option>
-                                    <option value="MISS.">Miss</option>
-                                    <option value="DR.">Dr</option>
-                                    <option value="PROF.">Prof</option>
+                                    <!-- Populated from /api/OtherServices/GetTitle (doc); fallback options below if API unused -->
+                                    <option value="Mr">Mr</option>
+                                    <option value="Mrs">Mrs</option>
+                                    <option value="Miss">Miss</option>
+                                    <option value="Dr">Dr</option>
+                                    <option value="Prof">Prof</option>
                                 </select>
+                                <div class="form-note">From API: GetTitle</div>
                                 <div class="error-message">Please select a title</div>
                             </div>
                             
@@ -728,6 +723,16 @@
                             </div>
                         </div>
                         
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="InvestorId">Investor / Advisor</label>
+                                <select id="InvestorId" name="InvestorId">
+                                    <option value="">None</option>
+                                    <!-- Populated from /api/OtherServices/GetInvestAdvisors (doc) -->
+                                </select>
+                                <div class="form-note">Optional; from API: GetInvestAdvisors</div>
+                            </div>
+                        </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="InvestmentOb">Investment Objectives</label>
@@ -1078,6 +1083,7 @@
             
             <!-- System Information (Hidden) -->
             <input type="hidden" id="ClientType" name="ClientType" value="FI">
+            <input type="hidden" id="Residency" name="Residency" value="R">
             <input type="hidden" id="ApiUser" name="ApiUser" value="DIALOG">
             <input type="hidden" id="Status" name="Status" value="1">
             <input type="hidden" id="EnterUser" name="EnterUser" value="SYSTEM">
@@ -1447,12 +1453,14 @@
 
             // Load all data in parallel
             Promise.all([
+                loadResource('getTitles', 'Title', 'TITLE_CODE', 'TITLE_NAME', true),
                 loadResource('getBrokers', 'BrokerFirm', 'BROKER_ID', 'BROKER_FULL_NAME'),
                 loadResource('getDistricts', 'ResAddressDistrict', 'DISTRICT_CODE', 'DISTRICT_NAME'),
                 loadResource('getCountries', 'Country', 'COUNTRY_CODE', 'COUNTRY_NAME'),
                 loadResource('getCountries', 'CountryOfResidency', 'COUNTRY_CODE', 'COUNTRY_NAME'),
                 loadResource('getCountries', 'Nationality', 'COUNTRY_CODE', 'COUNTRY_NAME'),
-                loadResource('getBanks', 'BankCode', 'BANK_CODE', 'BANK_NAME')
+                loadResource('getBanks', 'BankCode', 'BANK_CODE', 'BANK_NAME'),
+                loadResource('getInvestAdvisors', 'InvestorId', 'INVESTOR_ID', 'INVESTOR_NAME', true)
             ]).then(() => {
                 showStatus('Data loaded successfully', 'success');
                 setTimeout(() => {
@@ -1463,19 +1471,26 @@
             });
         }
 
-        function loadResource(action, selectId, valueField, displayField) {
+        function loadResource(action, selectId, valueField, displayField, optional) {
             return new Promise((resolve, reject) => {
                 fetch(`resource.php?action=${action}`)
                     .then(response => response.json())
                     .then(data => {
-                        if (data.success && data.data) {
+                        if (data.success && data.data && data.data.length > 0) {
                             populateDropdown(selectId, data.data, valueField, displayField);
+                        }
+                        if (optional) {
                             resolve();
-                        } else {
+                        } else if (!data.success || !data.data) {
                             reject(new Error(data.message || 'Failed to load ' + action));
+                        } else {
+                            resolve();
                         }
                     })
-                    .catch(error => reject(error));
+                    .catch(error => {
+                        if (optional) resolve();
+                        else reject(error);
+                    });
             });
         }
 
@@ -1569,7 +1584,6 @@
                 const element = formElements[i];
                 if (element.name && !element.disabled) {
                     if (element.type === 'file') {
-                        // Files will be added separately
                         if (element.files && element.files[0]) {
                             formData.append(element.name, element.files[0]);
                         }
@@ -1585,12 +1599,29 @@
                     }
                 }
             }
+            // Unchecked radios are not in FormData – ensure required groups have a value
+            const radioDefaults = {
+                'Gender': 'M',
+                'IsPEP': 'N',
+                'PEP_Q1': 'N', 'PEP_Q2': 'N', 'PEP_Q3': 'N', 'PEP_Q4': 'N',
+                'LitigationStatus': 'N',
+                'BankAccountType': 'I'
+            };
+            for (const name of Object.keys(radioDefaults)) {
+                if (!formData.has(name)) formData.append(name, radioDefaults[name]);
+            }
+
+            // Ensure system/hidden fields are always present (in case they were not in form.elements)
+            if (!formData.has('ClientType')) formData.append('ClientType', 'FI');
+            if (!formData.has('Residency')) formData.append('Residency', 'R');
+            if (!formData.has('Status')) formData.append('Status', '1');
+            if (!formData.has('EnterUser')) formData.append('EnterUser', 'SYSTEM');
+            if (!formData.has('ApiUser')) formData.append('ApiUser', 'DIALOG');
 
             // Add hidden fields
             formData.append('UserID', generateUserId());
             formData.append('EnterDate', new Date().toISOString().split('T')[0]);
             formData.append('ApiRefNo', 'REF-' + Date.now());
-            formData.append('ResAddressStatus', 'Y');
 
             // Show loading
             showStatus('Submitting application...', 'info');
@@ -1998,34 +2029,6 @@
                 bankCodeSelect.addEventListener('change', loadBankBranches);
             }
         });
-
-
-        function resumeSession() {
-            const accountId = document.getElementById('resume_account_id').value.trim();
-            if (!accountId) {
-                showStatus('Please enter an Account ID', 'error');
-                return;
-            }
-            // Verify with server (optional)
-            fetch(`resource.php?action=verifyAccount&accountId=${accountId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        currentAccountId = accountId;
-                        localStorage.setItem('cse_account_id', accountId);
-                        addHiddenAccountField();
-                        // Jump to step 2 (or whichever step is appropriate)
-                        currentStep = 2;
-                        showStep(2);
-                        showStatus('Session resumed for Account ID: ' + accountId, 'success');
-                    } else {
-                        showStatus('Invalid Account ID', 'error');
-                    }
-                })
-                .catch(() => showStatus('Error verifying Account ID', 'error'));
-        }
-
-
     </script>
 
 

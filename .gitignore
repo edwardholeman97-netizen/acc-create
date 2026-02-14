@@ -1,0 +1,8 @@
+# Environment (contains secrets)
+.env
+
+# Token cache and logs (generated at runtime)
+.token_cache.json
+storage/
+live_api_log.txt
+api.log

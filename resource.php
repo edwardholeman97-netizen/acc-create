@@ -1,37 +1,37 @@
 <?php
+// resource.php - CSE API Resource Endpoints (dropdowns / reference data)
+// Full API doc (fields, types): https://docs.google.com/spreadsheets/d/1RmWTSGOAT9E408jGtw7_Gm6FQeGGI_njWcJ2uqcE070/edit?usp=sharing
+require_once __DIR__ . '/config.php';
 
-session_start();
-
-// resource.php - CSE API Resource Endpoints
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: ' . (CORS_ALLOW_ORIGIN ?: '*'));
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization');
 
-
-// Handle preflight requests
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// ==================== CONFIG ====================
-define('API_BASE_URL', 'https://uat-cseapi.cse.lk');
-define('API_USERNAME', 'SCTestUser');
-define('API_PASSWORD', '2d26tF&M!cqS');
-
-// Response array
 $response = ['success' => false, 'message' => '', 'data' => []];
 
-// ==================== AUTH FUNCTION ====================
+// ==================== AUTH (token cached per config) ====================
 function getAuthToken() {
-    $url = API_BASE_URL . '/token';
-    
+    $now = time();
+    $cacheFile = CSE_TOKEN_CACHE_FILE;
+    if (file_exists($cacheFile) && is_readable($cacheFile)) {
+        $cached = @json_decode(file_get_contents($cacheFile), true);
+        if (!empty($cached['token']) && !empty($cached['expires']) && $cached['expires'] > $now) {
+            return $cached['token'];
+        }
+    }
+
+    $url = CSE_API_BASE_URL . '/token';
     $data = [
-        'username' => API_USERNAME,
-        'password' => API_PASSWORD,
+        'username' => CSE_API_USERNAME,
+        'password' => CSE_API_PASSWORD,
         'grant_type' => 'password'
     ];
-    
+
     $ch = curl_init();
     curl_setopt_array($ch, [
         CURLOPT_URL => $url,
@@ -45,15 +45,23 @@ function getAuthToken() {
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_TIMEOUT => 30
     ]);
-    
+
     $result = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
     if ($httpCode === 200 && $result) {
-        $response = json_decode($result, true);
-        if (isset($response['access_token'])) {
-            return $response['access_token'];
+        $parsed = json_decode($result, true);
+        if (isset($parsed['access_token'])) {
+            $token = $parsed['access_token'];
+            $dir = dirname($cacheFile);
+            if (!is_dir($dir)) @mkdir($dir, 0750, true);
+            @file_put_contents($cacheFile, json_encode([
+                'token' => $token,
+                'expires' => $now + CSE_TOKEN_VALID_SECONDS
+            ]), LOCK_EX);
+            @chmod($cacheFile, 0600);
+            return $token;
         }
     }
     return null;
@@ -65,7 +73,7 @@ function getAuthToken() {
 // ==================== CURL WRAPPER ====================
 function callCSEAPI($endpoint, $method = 'POST', $data = null, $requiresAuth = true) {
 
-    $url = API_BASE_URL . $endpoint;
+    $url = CSE_API_BASE_URL . $endpoint;
     $token = $requiresAuth ? getAuthToken() : null;
 
     $ch = curl_init();
@@ -173,18 +181,13 @@ try {
             $result = getBrokers();
             break;
 
-        case 'verifyAccount':
-            $accountId = $_GET['accountId'] ?? $_POST['accountId'] ?? '';
-            if (empty($accountId)) {
-                throw new Exception('Account ID is required');
-            }
-            $token = getAuthToken();
-            $result = verifyAccount($token, $accountId);
-            $response['success'] = !empty($result);
-            $response['data'] = $result;
+        case 'getTitles':
+            $result = getTitles();
             break;
-            
-        // Add more cases as we build functions
+
+        case 'getInvestAdvisors':
+            $result = getInvestAdvisors();
+            break;
             
         default:
             throw new Exception('Unknown action: ' . $action);
@@ -193,9 +196,24 @@ try {
 
 
     $response['success'] = $result['success'] ?? false;
-    $response['data'] = $result['data'] ?? [];
+    $rawData = $result['data'] ?? null;
+    // CSE may return a top-level array [ {...}, {...} ] or an object { "Data": [...] }; ensure we always send an array
+    if (is_array($rawData) && isset($rawData[0]) && is_array($rawData[0])) {
+        $response['data'] = $rawData;
+    } elseif (is_array($rawData) && (isset($rawData['Data']) || isset($rawData['data']))) {
+        $response['data'] = $rawData['Data'] ?? $rawData['data'] ?? [];
+    } else {
+        $response['data'] = is_array($rawData) ? $rawData : [];
+    }
     $response['http_code'] = $result['http_code'] ?? 0;
-    
+    // When request failed (e.g. 401), surface API message so user knows to check credentials
+    if (!$response['success'] && is_array($rawData)) {
+        $response['message'] = $rawData['Message'] ?? $rawData['message'] ?? $rawData['error_description'] ?? $rawData['error'] ?? '';
+    }
+    if (!$response['success'] && $response['message'] === '' && empty(CSE_API_USERNAME)) {
+        $response['message'] = 'API credentials not set. Add CSE_API_USERNAME and CSE_API_PASSWORD to .env';
+    }
+
 } catch (Exception $e) {
     $response['message'] = $e->getMessage();
     http_response_code(400);
@@ -354,6 +372,7 @@ function getBrokers() {
  *
  * 
  * Note: Titles are like Mr, Mrs, Miss, Dr, Prof etc.
+ * Frontend uses valueField TITLE_CODE, displayField TITLE_NAME; if CSE returns different keys, update index.php loadResource call.
  * 
  * @return array API response with success status and title data
  */
@@ -361,29 +380,16 @@ function getTitles() {
     return callCSEAPI('/api/OtherServices/GetTitle', 'POST', null, true);
 }
 
-
-
-// Add this function to verify existing accounts
-function verifyAccount($token, $accountId) {
-    // You'll need to check if CSE has an endpoint to verify accounts
-    // For now, we'll assume it exists and return true if valid
-    $url = API_BASE_URL . '/api/User/GetUser?AccountID=' . $accountId;
-    
-    $result = callCSEAPI('/api/User/GetUser?AccountID=' . $accountId, 'GET', null, true);
-    
-    if ($result['success'] && $result['http_code'] === 200) {
-        return $result['data'] ?? null;
-    }
-    
-    return null;
+/**
+ * Get investment advisors (for INVESTOR_ID dropdown; doc: INVESTOR_ID NUMBER(5)).
+ * Endpoint: POST /api/OtherServices/GetInvestAdvisors
+ * Frontend uses valueField INVESTOR_ID, displayField INVESTOR_NAME; adjust in index.php if CSE returns different keys.
+ */
+function getInvestAdvisors() {
+    return callCSEAPI('/api/OtherServices/GetInvestAdvisors', 'POST', null, true);
 }
-
-
-
 
 function writeApiLog($message) {
-    $logFile = __DIR__ . '/live_api_log.txt';
-    file_put_contents($logFile, $message . PHP_EOL, FILE_APPEND | LOCK_EX);
+    $logFile = defined('CSE_LOG_FILE') && CSE_LOG_FILE ? CSE_LOG_FILE : (CSE_STORAGE_PATH . '/api.log');
+    if ($logFile) @file_put_contents($logFile, $message . PHP_EOL, FILE_APPEND | LOCK_EX);
 }
-
-

@@ -1,6 +1,8 @@
 <?php
+require_once __DIR__ . '/config.php';
+
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: ' . (CORS_ALLOW_ORIGIN ?: '*'));
 header('Access-Control-Allow-Methods: POST, GET, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
@@ -8,20 +10,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// ==================== CONFIG ====================
-define('API_BASE_URL', 'https://uat-cseapi.cse.lk');
-define('API_USERNAME', 'SCTestUser');
-define('API_PASSWORD', '2d26tF&M!cqS');
+// Full API field spec: https://docs.google.com/spreadsheets/d/1RmWTSGOAT9E408jGtw7_Gm6FQeGGI_njWcJ2uqcE070/edit?usp=sharing
+// Null? N = nullable, Y = required. Flow: token → SaveUser → documents one by one.
 
-$response = ['success' => false, 'message' => '', 'accountId' => null, 'step' => null];
+$response = ['success' => false, 'message' => '', 'accountId' => null];
 
 try {
     liveLog('API Request Started');
     
-    // ==================== HANDLE INCOMING DATA ====================
+    // ==================== FIX: HANDLE BOTH JSON AND FORM-DATA ====================
     $formData = [];
     $hasFiles = false;
-    $step = 1; // Default to step 1
     
     // Check if it's multipart/form-data (file upload)
     if ($_SERVER['CONTENT_TYPE'] && strpos($_SERVER['CONTENT_TYPE'], 'multipart/form-data') !== false) {
@@ -33,59 +32,79 @@ try {
             $formData[$key] = $value;
         }
         
-        // Get step from form data
-        $step = isset($formData['form_step']) ? (int)$formData['form_step'] : 1;
+        // Add UserID if not provided
+        if (!isset($formData['UserID'])) {
+            $formData['UserID'] = generateUserId();
+        }
         
     } else {
         // It's JSON request
         liveLog('Request is JSON');
         $input = json_decode(file_get_contents('php://input'), true);
         
-        if (!$input) {
+        if (!$input || !isset($input['formData'])) {
             throw new Exception('Invalid or empty JSON data');
         }
         
-        $formData = $input['formData'] ?? $input;
-        $step = isset($formData['form_step']) ? (int)$formData['form_step'] : 
-                (isset($input['step']) ? (int)$input['step'] : 1);
+        $formData = $input['formData'];
     }
     
     if (empty($formData)) {
         throw new Exception('No form data received');
     }
     
-    liveLog("Processing Step: $step");
-    liveLog('Form data keys: ' . implode(', ', array_keys($formData)));
-    
-    // ==================== AUTHENTICATE ====================
-    liveLog('Step 0: Authentication');
+    liveLog('Form data processed successfully');
+    // ==================== END FIX ====================
+
+    // Validate required fields (doc Null? Y = not nullable = required)
+    validateRequiredSaveUserFields($formData);
+
+    // Step 1: Authenticate
+    liveLog('Step 1: Authentication');
     $token = getAuthToken();
     if (!$token) throw new Exception('Authentication failed');
-    
-    // ==================== ROUTE TO APPROPRIATE STEP ====================
-    switch ($step) {
-        case 1:
-            // STEP 1: Create New Account (AccountID = 0)
-            $response = handleStep1($token, $formData);
-            break;
-            
-        case 2:
-            // STEP 2: Update with Address, Employment, Bank Details
-            $response = handleStep2($token, $formData);
-            break;
-            
-        case 3:
-            // STEP 3: Update with Compliance, Source of Funds, Documents
-            $response = handleStep3($token, $formData, $hasFiles);
-            break;
-            
-        default:
-            throw new Exception('Invalid step: ' . $step);
+
+    // Step 2: Prepare user data
+    liveLog('Step 2: Preparing user data');
+    $userData = prepareUserData($formData);
+
+    // Step 3: Save user
+    liveLog('Step 3: Saving user data to CSE');
+    $saveResult = saveUserData($token, $userData);
+    $accountId = $saveResult['accountId'] ?? null;
+    if (!$accountId) {
+        $msg = trim($saveResult['error'] ?? '');
+        throw new Exception($msg ?: 'Failed to save user data');
     }
-    
+
+    // Step 4: Upload images (if any)
+    liveLog('Step 4: Uploading images');
+    $imageUploadSuccess = false;
+
+    if ($hasFiles && !empty($_FILES)) {
+        // Form was submitted with files
+        $imageUploadSuccess = uploadImages($token, $accountId, $formData);
+        liveLog('Image upload completed: ' . ($imageUploadSuccess ? 'Success' : 'Partial/Failed'));
+    } else {
+        // No files in this request
+        liveLog('No image files in this request');
+        $imageUploadSuccess = true;
+    }
+
+    // Step 5: Save source of funds
+    liveLog('Step 5: Saving source of funds');
+    $sourceFundsSuccess = saveSourceFunds($token, $accountId, $formData);
+
+    // Success response
+    $response['success'] = true;
+    $response['message'] = 'Account created successfully';
+    $response['accountId'] = $accountId;
+    $response['sourceFundsSaved'] = $sourceFundsSuccess;
+    $response['imagesUploaded'] = $imageUploadSuccess;
+    liveLog('All operations completed');
+
 } catch (Exception $e) {
     liveLog('Error: ' . $e->getMessage(), 'error');
-    $response['success'] = false;
     $response['message'] = $e->getMessage();
     http_response_code(400);
 }
@@ -100,447 +119,16 @@ echo json_encode($response);
 
 
 
-
-
-
-// ==================== STEP 1: CREATE NEW ACCOUNT ====================
-function handleStep1($token, $formData) {
-    liveLog('=== STEP 1: Create New Account ===');
-    
-    // IMPORTANT: AccountID MUST be 0 for new account creation
-    $formData['AccountID'] = 0;
-    
-    // Generate unique identifiers for new account
-    if (empty($formData['UserID'])) {
-        $formData['UserID'] = generateUserId();
-    }
-    
-    if (empty($formData['ApiRefNo'])) {
-        $formData['ApiRefNo'] = generateReferenceNumber();
-    }
-    
-    // Set default status for new submission
-    $formData['Status'] = '1'; // 1 = Submit (not 4 = Re-submit)
-    
-    // Prepare ONLY Step 1 fields (Personal + Identification + Broker)
-    $userData = prepareStep1Data($formData);
-    
-    // Save to CSE API
-    $accountId = saveUserData($token, $userData);
-    
-    if (!$accountId) {
-        throw new Exception('Failed to create account');
-    }
-    
-    liveLog("Account created successfully with ID: $accountId");
-    
-    // Store in session steps (if needed)
-    session_start();
-    $_SESSION['cse_account_id'] = $accountId;
-    $_SESSION['cse_user_id'] = $formData['UserID'];
-    $_SESSION['cse_api_ref_no'] = $formData['ApiRefNo'];
-    
-    return [
-        'success' => true,
-        'message' => 'Account created successfully',
-        'accountId' => $accountId,
-        'userId' => $formData['UserID'],
-        'apiRefNo' => $formData['ApiRefNo'],
-        'step' => 1
-    ];
-}
-
-
-
-
-
-
-
-
-// ==================== STEP 2: UPDATE WITH ADDRESS, EMPLOYMENT, BANK ====================
-function handleStep2($token, $formData) {
-    liveLog('=== STEP 2: Update Account Details ===');
-    
-    // VALIDATE: Account ID must be provided
-    if (empty($formData['AccountID']) && empty($formData['accountId'])) {
-        throw new Exception('Account ID is required for Step 2');
-    }
-    
-    // Get Account ID from various possible sources
-    $accountId = $formData['AccountID'] ?? $formData['accountId'] ?? 0;
-    
-    // Try to get from session if not provided
-    if ($accountId == 0) {
-        session_start();
-        $accountId = $_SESSION['cse_account_id'] ?? 0;
-        $formData['UserID'] = $formData['UserID'] ?? $_SESSION['cse_user_id'] ?? generateUserId();
-        $formData['ApiRefNo'] = $formData['ApiRefNo'] ?? $_SESSION['cse_api_ref_no'] ?? generateReferenceNumber();
-    }
-    
-    if ($accountId == 0) {
-        throw new Exception('Valid Account ID is required for update');
-    }
-    
-    liveLog("Updating Account ID: $accountId");
-    
-    // Set Account ID in form data
-    $formData['AccountID'] = $accountId;
-    
-    // Status 1 for update (not 0 - new)
-    $formData['Status'] = '1';
-    
-    // Prepare ONLY Step 2 fields (Address + Employment + Bank)
-    $userData = prepareStep2Data($formData);
-    
-    // Save to CSE API (UPDATE existing record)
-    $updatedAccountId = saveUserData($token, $userData);
-    
-    if (!$updatedAccountId) {
-        throw new Exception('Failed to update account');
-    }
-    
-    liveLog("Account updated successfully: $updatedAccountId");
-    
-    return [
-        'success' => true,
-        'message' => 'Account details updated successfully',
-        'accountId' => $accountId,
-        'step' => 2
-    ];
-}
-
-
-
-
-
-
-
-
-// ==================== STEP 3: COMPLIANCE, FUNDS & DOCUMENTS ====================
-function handleStep3($token, $formData, $hasFiles) {
-    liveLog('=== STEP 3: Finalize Account ===');
-    
-    // VALIDATE: Account ID must be provided
-    if (empty($formData['AccountID']) && empty($formData['accountId'])) {
-        throw new Exception('Account ID is required for Step 3');
-    }
-    
-    // Get Account ID from various possible sources
-    $accountId = $formData['AccountID'] ?? $formData['accountId'] ?? 0;
-    
-    // Try to get from session if not provided
-    if ($accountId == 0) {
-        session_start();
-        $accountId = $_SESSION['cse_account_id'] ?? 0;
-        $formData['UserID'] = $formData['UserID'] ?? $_SESSION['cse_user_id'] ?? generateUserId();
-        $formData['ApiRefNo'] = $formData['ApiRefNo'] ?? $_SESSION['cse_api_ref_no'] ?? generateReferenceNumber();
-    }
-    
-    if ($accountId == 0) {
-        throw new Exception('Valid Account ID is required for finalization');
-    }
-    
-    liveLog("Finalizing Account ID: $accountId");
-    
-    // Set Account ID in form data
-    $formData['AccountID'] = $accountId;
-    
-    $results = [
-        'user_saved' => false,
-        'source_funds_saved' => false,
-        'images_uploaded' => false
-    ];
-    
-    // 1. Update User with Compliance data (PEP, Litigation, etc)
-    $userData = prepareStep3Data($formData);
-    $updatedAccountId = saveUserData($token, $userData);
-    $results['user_saved'] = !empty($updatedAccountId);
-    
-    // 2. Save Source of Funds
-    $results['source_funds_saved'] = saveSourceFunds($token, $accountId, $formData);
-    
-    // 3. Upload Images (if any)
-    if ($hasFiles && !empty($_FILES)) {
-        $results['images_uploaded'] = uploadImages($token, $accountId, $formData);
-    } else {
-        $results['images_uploaded'] = true; // No files to upload
-    }
-    
-    // Clear session data after completion
-    session_start();
-    unset($_SESSION['cse_account_id']);
-    unset($_SESSION['cse_user_id']);
-    unset($_SESSION['cse_api_ref_no']);
-    
-    return [
-        'success' => true,
-        'message' => 'Account finalized successfully',
-        'accountId' => $accountId,
-        'step' => 3,
-        'details' => $results
-    ];
-}
-
-
-
-
-
-
-
-
-// ==================== DATA PREPARATION FUNCTIONS ====================
-
-/**
- * STEP 1: Personal Information + Identification + Broker
- * Fields needed for initial account creation
- */
-function prepareStep1Data($formData) {
-    $data = [
-        // MANDATORY: AccountID = 0 for new account
-        'AccountID' => 0,
-        
-        // Personal Information
-        'UserID' => $formData['UserID'] ?? generateUserId(),
-        'Title' => $formData['Title'] ?? '',
-        'Initials' => $formData['Initials'] ?? '',
-        'Surname' => $formData['Surname'] ?? '',
-        'NameDenoInitials' => $formData['NameDenoInitials'] ?? '',
-        'MobileNo' => $formData['MobileNo'] ?? '',
-        'TelphoneNo' => $formData['TelphoneNo'] ?? '',
-        'Email' => $formData['Email'] ?? '',
-
-        // Residential Address
-        'ResAddressStatus' => $formData['ResAddressStatus'] ?? 'Y',
-        'RES_ADDRESS_STATUS' => $formData['ResAddressStatus'] ?? 'Y',
-        'ResAddressStatusDesc' => $formData['ResAddressStatusDesc'] ?? 'Y',
-        'ResAddressLine01' => $formData['ResAddressLine01'] ?? '',
-        'ResAddressLine02' => $formData['ResAddressLine02'] ?? '',
-        'ResAddressLine03' => $formData['ResAddressLine03'] ?? '',
-        'ResAddressTown' => $formData['ResAddressTown'] ?? '',
-        'ResAddressDistrict' => $formData['ResAddressDistrict'] ?? '',
-        'Country' => $formData['Country'] ?? '',
-        
-        // Identification
-        'IdentificationProof' => mapIdentificationProof($formData['IdentificationProof'] ?? ''),
-        'NicNo' => $formData['NicNo'] ?? '',
-        'PassportNo' => $formData['PassportNo'] ?? '',
-        'PassportExpDate' => formatDateForAPI($formData['PassportExpDate'] ?? ''),
-        'DateOfBirthday' => formatDateForAPI($formData['DateOfBirthday'] ?? ''),
-        'Gender' => $formData['Gender'] ?? '',
-
-        // Bank Information
-        'BankAccountNo' => $formData['BankAccountNo'] ?? '',
-        'BankCode' => $formData['BankCode'] ?? '',
-        'BankBranch' => $formData['BankBranch'] ?? '',
-        'BankAccountType' => $formData['BankAccountType'] ?? 'I',
-        
-        // Broker Information
-        'BrokerFirm' => $formData['BrokerFirm'] ?? '',
-        'ExitCDSAccount' => $formData['ExitCDSAccount'] ?? 'N',
-        'CDSAccountNo' => $formData['CDSAccountNo'] ?? '',
-        'TinNo' => $formData['TinNo'] ?? '',
-
-        // Additional Fields
-        'CountryOfResidency' => $formData['CountryOfResidency'] ?? '',
-        'Nationality' => $formData['Nationality'] ?? '',
-        'Residency' => $formData['Residency'] ?? 'R',
-        'IsLKPassport' => $formData['IsLKPassport'] ?? 'N',
-        
-        // System Fields
-        'Status' => '1', // 1 = Submit
-        'EnterUser' => $formData['Email'] ?? 'SYSTEM',
-        'ApiUser' => 'DIALOG',
-        'ApiRefNo' => '',
-        
-        // Client Type (default to FI for your use case)
-        'ClientType' => $formData['ClientType'] ?? 'FI',
-    ];
-    
-    return $data;
-}
-
-
-
-
-
-/**
- * STEP 2: Address + Employment + Bank Information
- */
-function prepareStep2Data($formData) {
-    $data = [
-        // MANDATORY: Use existing Account ID
-        'AccountID' => $formData['AccountID'] ?? 0,
-        'UserID' => $formData['UserID'] ?? '',
-        
-        // Residential Address
-        'ResAddressStatus' => $formData['ResAddressStatus'] ?? 'Y',
-        'RES_ADDRESS_STATUS' => $formData['ResAddressStatus'] ?? 'Y',
-        'ResAddressStatusDesc' => $formData['ResAddressStatusDesc'] ?? '',
-        'ResAddressLine01' => $formData['ResAddressLine01'] ?? '',
-        'ResAddressLine02' => $formData['ResAddressLine02'] ?? '',
-        'ResAddressLine03' => $formData['ResAddressLine03'] ?? '',
-        'ResAddressTown' => $formData['ResAddressTown'] ?? '',
-        'ResAddressDistrict' => $formData['ResAddressDistrict'] ?? '',
-        'Country' => $formData['Country'] ?? '',
-        
-        // Correspondence Address (if different)
-        'CorrAddressStatus' => $formData['CorrAddressStatus'] ?? 'Y',
-        'CorrAddressLine01' => $formData['CorrAddressLine01'] ?? '',
-        'CorrAddressLine02' => $formData['CorrAddressLine02'] ?? '',
-        'CorrAddressLine03' => $formData['CorrAddressLine03'] ?? '',
-        'CorrAddressTown' => $formData['CorrAddressTown'] ?? '',
-        'CorrAddressDistrict' => $formData['CorrAddressDistrict'] ?? '',
-        
-        // Bank Information
-        'BankAccountNo' => $formData['BankAccountNo'] ?? '',
-        'BankCode' => $formData['BankCode'] ?? '',
-        'BankBranch' => $formData['BankBranch'] ?? '',
-        'BankAccountType' => $formData['BankAccountType'] ?? 'I',
-        
-        // Employment
-        'EmployeStatus' => $formData['EmployeStatus'] ?? '',
-        'Occupation' => $formData['Occupation'] ?? '',
-        'NameOfEmployer' => $formData['NameOfEmployer'] ?? '',
-        'AddressOfEmployer' => $formData['AddressOfEmployer'] ?? '',
-        'OfficePhoneNo' => $formData['OfficePhoneNo'] ?? '',
-        'OfficeEmail' => $formData['OfficeEmail'] ?? '',
-        'EmployeeComment' => $formData['EmployeeComment'] ?? '',
-        'NameOfBusiness' => $formData['NameOfBusiness'] ?? '',
-        'AddressOfBusiness' => $formData['AddressOfBusiness'] ?? '',
-        'OtherConnBusinessStatus' => $formData['OtherConnBusinessStatus'] ?? 'N',
-        'OtherConnBusinessDesc' => $formData['OtherConnBusinessDesc'] ?? '',
-        
-        // Additional Fields
-        'CountryOfResidency' => $formData['CountryOfResidency'] ?? '',
-        'Nationality' => $formData['Nationality'] ?? '',
-        'Residency' => $formData['Residency'] ?? 'R',
-        'IsLKPassport' => $formData['IsLKPassport'] ?? 'N',
-        
-        // System
-        'ApiRefNo' => $formData['ApiRefNo'] ?? '',
-        'Status' => '1'
-    ];
-    
-    return $data;
-}
-
-
-
-
-
-/**
- * STEP 3: Compliance + Investment + Source of Funds
- */
-function prepareStep3Data($formData) {
-    $data = [
-        // MANDATORY: Use existing Account ID
-        'AccountID' => $formData['AccountID'] ?? 0,
-        'UserID' => $formData['UserID'] ?? '',
-        
-        // Investment
-        'ExpValueInvestment' => $formData['ExpValueInvestment'] ?? '1',
-        'InvestorId' => $formData['InvestorId'] ?? '',
-        'InvestmentOb' => $formData['InvestmentOb'] ?? '',
-        'InvestmentStrategy' => $formData['InvestmentStrategy'] ?? '',
-        
-        // USA & Compliance
-        'UsaPersonStatus' => $formData['UsaPersonStatus'] ?? 'N',
-        'UsaTaxIdentificationNo' => $formData['UsaTaxIdentifierNo'] ?? '',
-        'FactaDeclaration' => $formData['FactaDeclaration'] ?? 'N',
-        'DualCitizenship' => $formData['DualCitizenship'] ?? 'N',
-        'DualCitizenCountry' => $formData['DualCitizenCountry'] ?? '',
-        'DualCitizenPassport' => $formData['DualCitizenPassport'] ?? '',
-        
-        // PEP
-        'IsPEP' => $formData['IsPEP'] ?? 'N',
-        'PepQ1' => $formData['PEP_Q1'] ?? 'N',
-        'PepQ1Details' => $formData['PEP_Q1_Details'] ?? '',
-        'PepQ2' => $formData['PEP_Q2'] ?? 'N',
-        'PepQ2Details' => $formData['PEP_Q2_Details'] ?? '',
-        'PepQ3' => $formData['PEP_Q3'] ?? 'N',
-        'PepQ3Details' => $formData['PEP_Q3_Details'] ?? '',
-        'PepQ4' => $formData['PEP_Q4'] ?? 'N',
-        'PepQ4Detailas' => $formData['PEP_Q4_Details'] ?? '', // Note API typo
-        
-        // Litigation
-        'LatigationStatus' => $formData['LitigationStatus'] ?? 'N',
-        'LatigationDetails' => $formData['LitigationDetails'] ?? '',
-        
-        // System
-        'ApiRefNo' => $formData['ApiRefNo'] ?? '',
-        'Status' => '1'
-    ];
-    
-    return $data;
-}
-
-
-
-
-
-
-
-
-
-
-// ==================== HELPER FUNCTIONS ====================
-
-/**
- * Map form ID proof to CSE API expected values
- */
-function mapIdentificationProof($value) {
-    $map = [
-        'NIC' => 'N',
-        'Passport' => 'P',
-        '' => 'N' // Default to NIC
-    ];
-    
-    return $map[$value] ?? 'N';
-}
-
-
-
-/**
- * Generate unique User ID
- */
-function generateUserId() {
-    return 'USER_' . date('Ymd') . '_' . uniqid();
-}
-
-
-
-/**
- * Generate reference number (timestamp based)
- */
-function generateReferenceNumber() {
-    return 'SAMPATH_' . time() . '_' . rand(100, 999);
-}
-
-
-
-
-/**
- * Format date for API (YYYY/MM/DD)
- */
-function formatDateForAPI($date) {
-    if (empty($date)) return '';
-    
-    // Convert from YYYY-MM-DD to YYYY/MM/DD
-    return str_replace('-', '/', $date);
-}
-
-
-
-
+// ==================== CORE FUNCTIONS ====================
 
 /**
  * Get authentication token
  */
 function getAuthToken() {
-    $url = API_BASE_URL . '/token';
+    $url = CSE_API_BASE_URL . '/token';
     $data = [
-        'username' => API_USERNAME,
-        'password' => API_PASSWORD,
+        'username' => CSE_API_USERNAME,
+        'password' => CSE_API_PASSWORD,
         'grant_type' => 'password'
     ];
     
@@ -575,18 +163,149 @@ function getAuthToken() {
 
 
 
+
+
+
 /**
- * Save user data to CSE API
+ * Prepare user data for CSE API (SaveUser).
+ * Field list, types, nullability: see API doc spreadsheet (link in CONFIG above).
+ * Dates: yyyy/mm/dd per doc. STATUS: 1=submit, 4=resubmit. GetTitle/GetBroker/GetDistrict/GetCountry/GetBank/GetBankBranch/GetInvestAdvisors for dropdowns.
+ */
+function prepareUserData($formData) {
+    liveLog('Mapping form data to CSE fields');
+    $idProof = $formData['IdentificationProof'] ?? 'P';
+    // Doc: when IdentificationProof is P (Passport), NIC_NO must be empty
+    $nicNo = ($idProof === 'P') ? '' : ($formData['NicNo'] ?? '');
+    
+    $mappedData = [
+        // Personal (doc: TITLE GetTitle, INITIALS 15, SURNAME 50, NAMES_DENO_INITIALS 160, MOBILE 16, EMAIL 100)
+        'AccountID' => 0,
+        'UserID' => $formData['UserID'] ?? generateUserId(),
+        'Title' => $formData['Title'] ?? '',
+        'Initials' => substr($formData['Initials'] ?? '', 0, 15),
+        'Surname' => substr($formData['Surname'] ?? '', 0, 50),
+        'NameDenoInitials' => substr($formData['NameDenoInitials'] ?? '', 0, 160),
+        'MobileNo' => substr($formData['MobileNo'] ?? '', 0, 16),
+        'TelphoneNo' => substr($formData['TelphoneNo'] ?? '', 0, 16),
+        'Email' => substr($formData['Email'] ?? '', 0, 100),
+        
+        // Identification (doc: P=Passport/N=NIC, NIC_NO empty when P, DATE yyyy/mm/dd)
+        'IdentificationProof' => $idProof,
+        'NicNo' => $nicNo,
+        'PassportNo' => $formData['PassportNo'] ?? '',
+        'PassportExpDate' => formatDateForAPI($formData['PassportExpDate'] ?? ''),
+        'DateOfBirthday' => formatDateForAPI($formData['DateOfBirthday'] ?? ''),
+        'Gender' => $formData['Gender'] ?? '',
+        
+        // Broker Information - NOTE: Must be 3-char code from getBrokers()
+        // Broker (doc: STOCK_BROKER_FIRM 3 chars GetBroker, EXIST_CDS_ACCOUNT Y/N, CDS_ACCOUNT_NO 20, TIN 20)
+        'BrokerFirm' => substr($formData['BrokerFirm'] ?? '', 0, 3),
+        'ExitCDSAccount' => $formData['ExitCDSAccount'] ?? 'N',
+        'CDSAccountNo' => substr($formData['CDSAccountNo'] ?? '', 0, 20),
+        'TinNo' => substr($formData['TinNo'] ?? '', 0, 20),
+        
+        // Residential Address (doc: RES_ADDRESS_* 30/15, DISTRICT NUMBER(2) GetDistrict, COUNTRY GetCountry)
+        'ResAddressStatus' => $formData['ResAddressStatus'] ?? 'Y',
+        'ResAddressStatusDesc' => $formData['ResAddressStatusDesc'] ?? '',
+        'ResAddressLine01' => substr($formData['ResAddressLine01'] ?? '', 0, 30),
+        'ResAddressLine02' => substr($formData['ResAddressLine02'] ?? '', 0, 30),
+        'ResAddressLine03' => substr($formData['ResAddressLine03'] ?? '', 0, 15),
+        'ResAddressTown' => substr($formData['ResAddressTown'] ?? '', 0, 15),
+        'ResAddressDistrict' => $formData['ResAddressDistrict'] ?? '',
+        'Country' => substr($formData['Country'] ?? '', 0, 4),
+        
+        // Correspondence Address (doc: optional; same structure)
+        'CorrAddressStatus' => $formData['CorrAddressStatus'] ?? 'Y',
+        'CorrAddressLine01' => substr($formData['CorrAddressLine01'] ?? '', 0, 30),
+        'CorrAddressLine02' => substr($formData['CorrAddressLine02'] ?? '', 0, 30),
+        'CorrAddressLine03' => substr($formData['CorrAddressLine03'] ?? '', 0, 15),
+        'CorrAddressTown' => substr($formData['CorrAddressTown'] ?? '', 0, 15),
+        'CorrAddressDistrict' => $formData['CorrAddressDistrict'] ?? '',
+        
+        // Bank (doc: BANK_ACCOUNT_NO 12, BANK_CODE 4 GetBank, BANK_BRANCH 4 GetBankBranch, BANK_ACCOUNT_TYPE I/C)
+        'BankAccountNo' => substr($formData['BankAccountNo'] ?? '', 0, 12),
+        'BankCode' => substr($formData['BankCode'] ?? '', 0, 4),
+        'BankBranch' => substr($formData['BankBranch'] ?? '', 0, 4),
+        'BankAccountType' => $formData['BankAccountType'] ?? 'I',
+        
+        // Employment (doc: EMPLOYE_STATUS Y/N/S/T, OCCUPATION 50, NAME_OF_EMPLOYER 100, etc.)
+        'EmployeStatus' => $formData['EmployeStatus'] ?? '',
+        'Occupation' => substr($formData['Occupation'] ?? '', 0, 50),
+        'NameOfEmployer' => $formData['NameOfEmployer'] ?? '',
+        'AddressOfEmployer' => $formData['AddressOfEmployer'] ?? '',
+        'OfficePhoneNo' => $formData['OfficePhoneNo'] ?? '',
+        'OfficeEmail' => $formData['OfficeEmail'] ?? '',
+        'EmployeeComment' => $formData['EmployeeComment'] ?? '',
+        'NameOfBusiness' => $formData['NameOfBusiness'] ?? '',
+        'AddressOfBusiness' => $formData['AddressOfBusiness'] ?? '',
+        'OtherConnBusinessStatus' => $formData['OtherConnBusinessStatus'] ?? 'N',
+        'OtherConnBusinessDesc' => $formData['OtherConnBusinessDesc'] ?? '',
+        
+        // Investment & Funds
+        'ExpValueInvestment' => $formData['ExpValueInvestment'] ?? '1',
+        'SourseOfFund' => $formData['SourseOfFund'] ?? '',
+        
+        // USA & Compliance
+        'UsaPersonStatus' => $formData['UsaPersonStatus'] ?? 'N',
+        'UsaTaxIdentificationNo' => $formData['UsaTaxIdentifierNo'] ?? '',
+        'FactaDeclaration' => $formData['FactaDeclaration'] ?? 'N',
+        'DualCitizenship' => $formData['DualCitizenship'] ?? 'N',
+        'DualCitizenCountry' => $formData['DualCitizenCountry'] ?? '',
+        'DualCitizenPassport' => $formData['DualCitizenPassport'] ?? '',
+        
+        // PEP - Your form uses underscores, API uses camelCase
+        'IsPEP' => $formData['IsPEP'] ?? 'N',
+        'PepQ1' => $formData['PEP_Q1'] ?? 'N',
+        'PepQ1Details' => $formData['PEP_Q1_Details'] ?? '',
+        'PepQ2' => $formData['PEP_Q2'] ?? 'N',
+        'PepQ2Details' => $formData['PEP_Q2_Details'] ?? '',
+        'PepQ3' => $formData['PEP_Q3'] ?? 'N',
+        'PepQ3Details' => $formData['PEP_Q3_Details'] ?? '',
+        'PepQ4' => $formData['PEP_Q4'] ?? 'N',
+        'PepQ4Detailas' => $formData['PEP_Q4_Details'] ?? '', // Note: API has typo "Detailas"
+        
+        // Litigation - Your form uses correct spelling, API has typo "Latigation"
+        'LatigationStatus' => $formData['LitigationStatus'] ?? 'N',
+        'LatigationDetails' => $formData['LitigationDetails'] ?? '',
+        
+        // System Fields
+        'Status' => $formData['Status'] ?? '1',
+        'EnterUser' => $formData['EnterUser'] ?? 'SYSTEM',
+        'SaveTable' => $formData['SaveTable'] ?? 'U',
+        'SignData' => $formData['SignData'] ?? '',
+        
+        // Additional Fields
+        'StrockBrokerFirmName' => $formData['BrokerFirm'] ?? '', // Same as BrokerFirm
+        'CountryOfResidency' => $formData['CountryOfResidency'] ?? '',
+        'Nationality' => $formData['Nationality'] ?? '',
+        'ClientType' => $formData['ClientType'] ?? 'FI',
+        'Residency' => $formData['Residency'] ?? 'R',
+        'IsLKPassport' => $formData['IsLKPassport'] ?? 'N',
+        'InvestorId' => $formData['InvestorId'] ?? '',
+        'InvestmentOb' => $formData['InvestmentOb'] ?? '',
+        'InvestmentStrategy' => $formData['InvestmentStrategy'] ?? '',
+        'EnterDate' => formatDateForAPI($formData['EnterDate'] ?? date('Y-m-d')),
+        'ApiUser' => $formData['ApiUser'] ?? 'DIALOG',
+        'ApiRefNo' => $formData['ApiRefNo'] ?? generateReferenceNumber()
+    ];
+    
+    return $mappedData;
+}
+
+
+
+
+
+
+
+
+/**
+ * Save user data to CSE API.
+ * Returns ['accountId' => int|null, 'error' => string] so caller can show CSE error to user.
  */
 function saveUserData($token, $userData) {
-    $url = API_BASE_URL . '/api/User/SaveUser';
-    
-    liveLog('Saving user data: ' . json_encode([
-        'AccountID' => $userData['AccountID'] ?? 0,
-        'UserID' => $userData['UserID'] ?? '',
-        'fields' => count($userData)
-    ]));
-    
+    $url = CSE_API_BASE_URL . '/api/User/SaveUser';
+
     $ch = curl_init();
     curl_setopt_array($ch, [
         CURLOPT_URL => $url,
@@ -600,33 +319,53 @@ function saveUserData($token, $userData) {
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_TIMEOUT => 30
     ]);
-    
+
     $result = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
     liveLog("SaveUser Response HTTP: $httpCode");
+    liveLog('SaveUser raw response: ' . (strlen($result) > 500 ? substr($result, 0, 500) . '...' : $result));
+
+    $result = trim($result);
+    $response = $result ? json_decode($result, true) : null;
+
+    // Extract error message from CSE response (various common shapes)
+    $cseError = '';
+    if (is_array($response)) {
+        $cseError = $response['Message'] ?? $response['message'] ?? $response['error_description'] ?? $response['error'] ?? '';
+        if (is_array($cseError)) $cseError = json_encode($cseError);
+    }
+    if ($cseError === '' && $result && $httpCode >= 400) $cseError = $result;
 
     if ($httpCode === 200 && $result) {
-        $response = json_decode($result, true);
-        
-        // Response could be numeric (Account ID) or array with AccountID
+        // Case 1: API returns raw number as JSON (e.g. 12345)
         if (is_numeric($response)) {
-            return (int)$response;
+            $accountId = (int)$response;
+            liveLog("User saved. AccountID: $accountId");
+            return ['accountId' => $accountId, 'error' => ''];
         }
-        
-        if (isset($response['AccountID'])) {
-            return (int)$response['AccountID'];
+
+        // Case 2: API returns object with AccountID (e.g. {"AccountID": 12345})
+        if (is_array($response) && isset($response['AccountID'])) {
+            $accountId = (int)$response['AccountID'];
+            liveLog("User saved. AccountID: $accountId");
+            return ['accountId' => $accountId, 'error' => ''];
         }
-        
-        // If we get success but no AccountID, return the AccountID we sent
-        if ($userData['AccountID'] > 0) {
-            return $userData['AccountID'];
+
+        // Case 3: API returns plain text number (no JSON)
+        if (preg_match('/^\d+$/', $result)) {
+            $accountId = (int)$result;
+            liveLog("User saved. AccountID (plain): $accountId");
+            return ['accountId' => $accountId, 'error' => ''];
         }
+
+        liveLog('SaveUser response missing AccountID', 'error');
+        return ['accountId' => null, 'error' => $cseError ?: 'Response did not contain AccountID'];
     }
-    
+
     liveLog("SaveUser failed. HTTP: $httpCode Response: $result", 'error');
-    return null;
+    return ['accountId' => null, 'error' => $cseError ?: "HTTP $httpCode. " . (strlen($result) > 200 ? substr($result, 0, 200) . '...' : $result)];
 }
 
 
@@ -634,26 +373,69 @@ function saveUserData($token, $userData) {
 
 
 
+
+
 /**
- * Save source of funds
+ * Save source of funds to CSE API
+ * Endpoint: /api/User/SaveSourceFunds
+ * 
+ * Model: SourceFundsMappers (all fields optional)
+ * Items 01-11: String values (probably percentages or amounts)
+ * Mot1-Mot4: Additional information fields
+ * SaveTable: Optional (default 'F' from old PDF)
  */
 function saveSourceFunds($token, $accountId, $formData) {
-    liveLog('Saving source of funds for Account ID: ' . $accountId);
+    liveLog('Preparing source of funds data');
     
+    // Get USER_ID from form data
+    $userId = $formData['UserID'] ?? generateUserId();
+    
+    // Create payload with only AccountID and UserID as required
     $payload = [
         'AccountID' => $accountId,
-        'UserID' => $formData['UserID'] ?? '',
-        'SaveTable' => 'F'
+        'UserID' => $userId
     ];
     
-    // Map source of fund selection (1-11) to Item01-Item11
-    $sourceFundValue = $formData['SourseOfFund'] ?? '';
-    if (!empty($sourceFundValue) && is_numeric($sourceFundValue)) {
-        $itemNumber = str_pad($sourceFundValue, 2, '0', STR_PAD_LEFT);
-        $payload['Item' . $itemNumber] = 'Y';
+    // Add SaveTable if we have it (from old PDF: 'F')
+    if (isset($formData['SaveTable'])) {
+        $payload['SaveTable'] = $formData['SaveTable'];
+    } else {
+        $payload['SaveTable'] = 'F'; // Default from old PDF
     }
     
-    $url = API_BASE_URL . '/api/User/SaveSourceFunds';
+    // ==================== ITEMS 01-11 ====================
+    // Based on your form, you have SINGLE dropdown selection
+    // Values 1-11 map to Item01-Item11
+    
+    $sourceFundValue = $formData['SourseOfFund'] ?? '';
+    
+    if (!empty($sourceFundValue) && is_numeric($sourceFundValue)) {
+        // Map dropdown value (1-11) to Item01-Item11
+        $itemNumber = str_pad($sourceFundValue, 2, '0', STR_PAD_LEFT);
+        $itemKey = 'Item' . $itemNumber;
+        
+        // Set selected item to indicate source
+        // Value could be 'Y', '100%', or something else
+        // Need business logic: What value should we send?
+        $payload[$itemKey] = 'Y'; // 'Y' for Yes this is the source
+        
+        liveLog("Source of funds: $itemKey selected");
+    }
+    
+    // ==================== MOT FIELDS ====================
+    // Add Mot fields if present in form data
+    $motFields = ['Mot1', 'Mot2', 'Mot3', 'Mot4'];
+    foreach ($motFields as $motField) {
+        if (isset($formData[$motField]) && !empty($formData[$motField])) {
+            $payload[$motField] = $formData[$motField];
+        }
+    }
+    
+    // Log payload for debugging
+    liveLog('Source funds payload: ' . json_encode($payload));
+    
+    // Call API
+    $url = CSE_API_BASE_URL . '/api/User/SaveSourceFunds';
     
     $ch = curl_init();
     curl_setopt_array($ch, [
@@ -663,7 +445,8 @@ function saveSourceFunds($token, $accountId, $formData) {
         CURLOPT_POSTFIELDS => json_encode($payload),
         CURLOPT_HTTPHEADER => [
             'Authorization: Bearer ' . $token,
-            'Content-Type: application/json; charset=utf-8'
+            'Content-Type: application/json; charset=utf-8',
+            'Accept: application/json'
         ],
         CURLOPT_SSL_VERIFYPEER => false,
         CURLOPT_TIMEOUT => 30
@@ -673,79 +456,165 @@ function saveSourceFunds($token, $accountId, $formData) {
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    return ($httpCode === 200);
+    liveLog("SaveSourceFunds Response HTTP: $httpCode");
+    
+    // Check response - since all fields are optional, any 200 response is success
+    if ($httpCode === 200) {
+        liveLog('Source of funds saved successfully');
+        return true;
+    }
+    
+    // Log error details
+    if ($result) {
+        $errorResponse = json_decode($result, true);
+        liveLog("SaveSourceFunds error: " . json_encode($errorResponse), 'error');
+    } else {
+        liveLog("SaveSourceFunds failed with HTTP $httpCode", 'error');
+    }
+    
+    return false;
 }
 
 
 
 
+
+
+
+
+
+
+
 /**
- * Upload images
+ * Upload images one by one to CSE API (sequential – do NOT send in parallel).
+ * Endpoint: /api/ImageUpload/UploadImageOnebyOne
+ * CSE requires: first step → SaveUser (get AccountID); second step → send documents one by one.
+ *
+ * @param string $token Authentication token (valid 15 min)
+ * @param int $accountId Account ID from SaveUser response
+ * @param array $formData Form data (for UserID)
+ * @return bool True if all present files uploaded successfully
  */
 function uploadImages($token, $accountId, $formData) {
-    liveLog('Uploading images for Account ID: ' . $accountId);
-    
-    $imageTypeMap = [
-        'selfie_upload' => 1,
-        'nic_front_upload' => 2,
-        'nic_back_upload' => 3,
-        'passport_upload' => 4
+    $userId = $formData['UserID'] ?? generateUserId();
+
+    // Order must be sequential: one by one (NIC Front, NIC Back, etc.). No parallel.
+    $uploadOrder = [
+        'selfie_upload'   => 'Selfie',
+        'nic_front_upload' => 'NIC Front',
+        'nic_back_upload'  => 'NIC Back',
+        'passport_upload'  => 'Passport'
     ];
-    
-    $success = true;
-    
-    foreach ($_FILES as $fieldName => $file) {
-        if ($file['error'] !== UPLOAD_ERR_OK) {
+
+    $allSuccess = true;
+    foreach ($uploadOrder as $fileKey => $imageTypeLabel) {
+        if (empty($_FILES[$fileKey]['tmp_name']) || $_FILES[$fileKey]['error'] !== UPLOAD_ERR_OK) {
             continue;
         }
-        
-        $imageType = $imageTypeMap[$fieldName] ?? 0;
-        if ($imageType === 0) continue;
-        
-        $imageData = base64_encode(file_get_contents($file['tmp_name']));
-        
-        $payload = [
-            'AccountID' => $accountId,
-            'ImageType' => $imageType,
-            'Image' => $imageData,
-            'UserID' => $formData['UserID'] ?? ''
+
+        liveLog("Uploading document: $imageTypeLabel (one by one, sequential)");
+
+        $url = CSE_API_BASE_URL . '/api/ImageUpload/UploadImageOnebyOne';
+        $filePath = $_FILES[$fileKey]['tmp_name'];
+
+        // If Swagger uses different param names (e.g. File, DocumentType), adjust here
+        $postFields = [
+            'AccountID'  => $accountId,
+            'UserID'     => $userId,
+            'ImageType'  => $imageTypeLabel,
+            'file'       => new CURLFile($filePath, $_FILES[$fileKey]['type'] ?? 'image/jpeg', $_FILES[$fileKey]['name'])
         ];
-        
-        $url = API_BASE_URL . '/api/ImageUpload/UploadImageOnebyOne';
-        
+
         $ch = curl_init();
         curl_setopt_array($ch, [
-            CURLOPT_URL => $url,
+            CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode($payload),
-            CURLOPT_HTTPHEADER => [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $postFields,
+            CURLOPT_HTTPHEADER     => [
                 'Authorization: Bearer ' . $token,
-                'Content-Type: application/json; charset=utf-8'
+                'Accept: application/json'
             ],
-            CURLOPT_SSL_VERIFYPEER => false,
-            CURLOPT_TIMEOUT => 60
+            CURLOPT_SSL_VERIFYPEER  => false,
+            CURLOPT_TIMEOUT        => 60
         ]);
-        
+
         $result = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
-        
+
         if ($httpCode !== 200) {
-            $success = false;
-            liveLog("Failed to upload $fieldName. HTTP: $httpCode", 'error');
+            liveLog("Upload failed for $imageTypeLabel: HTTP $httpCode - $result", 'error');
+            $allSuccess = false;
+        } else {
+            liveLog("Uploaded: $imageTypeLabel");
         }
     }
-    
-    return $success;
+
+    return $allSuccess;
 }
 
+// ==================== VALIDATION (doc: Null? Y = required) ====================
 /**
- * Logging function
+ * Validate that all required (Null? Y) fields have a value before SaveUser.
+ * Doc: Null? N = nullable (optional), Null? Y = not nullable (required).
+ * PEP_Q1–Q4 only required when IsPEP is Y (they are hidden when IsPEP is N).
  */
-function liveLog($message, $type = 'info') {
-    $logFile = __DIR__ . '/api_debug.log';
-    $timestamp = date('Y-m-d H:i:s');
-    $logMessage = "[$timestamp] [$type] $message" . PHP_EOL;
-    file_put_contents($logFile, $logMessage, FILE_APPEND | LOCK_EX);
+function validateRequiredSaveUserFields($formData) {
+    $required = [
+        'Title', 'Initials', 'Surname', 'NameDenoInitials', 'MobileNo', 'Email',
+        'IdentificationProof', 'DateOfBirthday', 'Gender', 'BrokerFirm',
+        'ResAddressLine01', 'ResAddressTown', 'ResAddressDistrict', 'Country',
+        'BankAccountNo', 'BankCode', 'BankBranch', 'BankAccountType',
+        'EmployeStatus', 'ExpValueInvestment', 'IsPEP', 'LitigationStatus',
+        'CountryOfResidency', 'Nationality', 'ClientType', 'Residency'
+    ];
+    $idProof = trim($formData['IdentificationProof'] ?? '');
+    if ($idProof === 'P') {
+        $required[] = 'PassportNo';
+    } else {
+        $required[] = 'NicNo';
+    }
+    // When IsPEP is Y, PEP Q1–4 are required; when N they are defaulted in prepareUserData
+    $isPEP = strtoupper(trim($formData['IsPEP'] ?? 'N'));
+    if ($isPEP === 'Y') {
+        $required[] = 'PEP_Q1';
+        $required[] = 'PEP_Q2';
+        $required[] = 'PEP_Q3';
+        $required[] = 'PEP_Q4';
+    }
+    $missing = [];
+    foreach ($required as $key) {
+        $val = isset($formData[$key]) ? trim((string)$formData[$key]) : '';
+        if ($val === '') {
+            $missing[] = $key;
+        }
+    }
+    if (!empty($missing)) {
+        throw new Exception('Required fields missing (doc Null? Y): ' . implode(', ', $missing));
+    }
+}
+
+// ==================== HELPERS (per API doc) ====================
+function liveLog($message, $level = 'info') {
+    $logFile = defined('CSE_LOG_FILE') && CSE_LOG_FILE ? CSE_LOG_FILE : (CSE_STORAGE_PATH . '/api.log');
+    if (!$logFile) return;
+    $line = '[' . date('Y-m-d H:i:s') . '] [' . strtoupper($level) . '] ' . $message . PHP_EOL;
+    if (!is_dir(dirname($logFile))) @mkdir(dirname($logFile), 0750, true);
+    @file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
+}
+
+/** Dates per doc: yyyy/mm/dd */
+function formatDateForAPI($date) {
+    if (empty($date) || trim($date) === '') return '';
+    $t = strtotime($date);
+    return $t ? date('Y/m/d', $t) : '';
+}
+
+function generateUserId() {
+    return (isset($_SERVER['REMOTE_ADDR']) ? str_replace('.', '', $_SERVER['REMOTE_ADDR']) : 'web') . '_' . date('YmdHis') . '_' . substr(md5(uniqid('', true)), 0, 6);
+}
+
+function generateReferenceNumber() {
+    return 'REF' . date('YmdHis') . substr(str_pad((string)mt_rand(0, 9999), 4, '0', STR_PAD_LEFT), -4);
 }
