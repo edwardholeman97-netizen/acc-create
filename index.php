@@ -1888,7 +1888,8 @@
             if (!formData.get('EnterDate') || !formData.get('EnterDate').toString().trim()) {
                 formData.set('EnterDate', new Date().toISOString().split('T')[0]);
             }
-            formData.set('ApiRefNo', 'REF-' + Date.now());
+            // API_REF_NO max 15 chars (Oracle column limit)
+            formData.set('ApiRefNo', ('REF' + Date.now()).slice(0, 15));
 
             // Show loading
             showStatus('Submitting application...', 'info');
