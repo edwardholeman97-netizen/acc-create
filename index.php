@@ -1502,6 +1502,15 @@
                 currentStepElement.classList.add('active');
             }
 
+            // When step 6 (Bank) is shown, load bank branches if a bank is already selected
+            if (stepNumber === 6) {
+                const bankCodeEl = document.getElementById('BankCode');
+                const branchSelect = document.getElementById('BankBranch');
+                if (bankCodeEl && branchSelect && bankCodeEl.value && branchSelect.options.length <= 1) {
+                    loadBankBranches();
+                }
+            }
+
             // Update navigation
             document.querySelectorAll('.step').forEach(step => {
                 step.classList.remove('active');
@@ -1762,43 +1771,52 @@
         }
 
         function loadBankBranches() {
-            const bankCode = document.getElementById('BankCode').value;
+            const bankCodeEl = document.getElementById('BankCode');
             const branchSelect = document.getElementById('BankBranch');
+            if (!bankCodeEl || !branchSelect) return;
 
+            const bankCode = bankCodeEl.value.trim();
             if (!bankCode) {
-                // Clear branches
                 while (branchSelect.options.length > 1) {
                     branchSelect.remove(1);
                 }
+                branchSelect.value = '';
                 return;
             }
 
-            // Show loading
             showStatus('Loading bank branches...', 'info');
 
-            fetch(`resource.php?action=getBranches&BANK_CODE=${bankCode}`)
+            fetch(`resource.php?action=getBranches&BANK_CODE=${encodeURIComponent(bankCode)}`)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.success && data.data) {
-                        // Clear existing branches
+                    // Support both direct array and wrapped { data: [...] } or { Data: [...] }
+                    let branches = data.data;
+                    if (!Array.isArray(branches) && data.data && Array.isArray(data.data.data)) {
+                        branches = data.data.data;
+                    }
+                    if (!Array.isArray(branches) && data.data && Array.isArray(data.data.Data)) {
+                        branches = data.data.Data;
+                    }
+
+                    if (data.success && Array.isArray(branches) && branches.length > 0) {
                         while (branchSelect.options.length > 1) {
                             branchSelect.remove(1);
                         }
-
-                        // Add new branches
-                        data.data.forEach(branch => {
+                        branches.forEach(branch => {
                             const option = document.createElement('option');
-                            option.value = branch.BANK_BRANCH_CODE || branch.BANK_BRANCH_NAME;
-                            option.textContent = branch.BANK_BRANCH_NAME || branch.BANK_BRANCH_NAME;
+                            const code = branch.BANK_BRANCH_CODE || branch.BankBranchCode || branch.code || '';
+                            const name = branch.BANK_BRANCH_NAME || branch.BankBranchName || branch.name || '';
+                            option.value = code || name;
+                            option.textContent = name || code || 'Branch';
                             branchSelect.appendChild(option);
                         });
-
                         showStatus('Branches loaded', 'success');
                         setTimeout(() => {
-                            document.getElementById('status-message').style.display = 'none';
+                            const statusMsg = document.getElementById('status-message');
+                            if (statusMsg) statusMsg.style.display = 'none';
                         }, 1000);
                     } else {
-                        showStatus('Failed to load branches: ' + (data.message || 'Unknown error'), 'error');
+                        showStatus('Failed to load branches: ' + (data.message || 'No branches returned'), 'error');
                     }
                 })
                 .catch(error => {
@@ -2271,11 +2289,15 @@
         }
 
         // ==================== EVENT LISTENERS ====================
-        // Attach bank code change listener
+        // Bank branches: use delegation so it works after form steps are rebuilt
         document.addEventListener('DOMContentLoaded', function() {
-            const bankCodeSelect = document.getElementById('BankCode');
-            if (bankCodeSelect) {
-                bankCodeSelect.addEventListener('change', loadBankBranches);
+            const form = document.getElementById('cdsAccountForm');
+            if (form) {
+                form.addEventListener('change', function(e) {
+                    if (e.target && e.target.id === 'BankCode') {
+                        loadBankBranches();
+                    }
+                });
             }
         });
     </script>
