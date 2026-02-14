@@ -754,6 +754,37 @@
                         
                         <div class="form-row">
                             <div class="form-group">
+                                <label for="ResAddressStatus" class="required">Residential Address Status</label>
+                                <div class="radio-group">
+                                    <div class="radio-option">
+                                        <input type="radio" id="res_addr_y" name="ResAddressStatus" value="Y" required>
+                                        <label for="res_addr_y">Yes</label>
+                                    </div>
+                                    <div class="radio-option">
+                                        <input type="radio" id="res_addr_n" name="ResAddressStatus" value="N" required>
+                                        <label for="res_addr_n">No</label>
+                                    </div>
+                                </div>
+                                <div class="error-message">Please select residential address status</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="ResAddressStatusDesc" class="required">Residential Address Status Description</label>
+                                <select id="ResAddressStatusDesc" name="ResAddressStatusDesc" required>
+                                    <option value="">Select</option>
+                                    <option value="1">1 - Owner</option>
+                                    <option value="2">2 - With parents</option>
+                                    <option value="3">3 - Lease / Rent</option>
+                                    <option value="4">4 - Friend's / Relative's</option>
+                                    <option value="5">5 - Board / Lodging</option>
+                                    <option value="6">6 - Official</option>
+                                </select>
+                                <div class="error-message">Please select status description</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
                                 <label for="ResAddressLine01" class="required">Address Line 1</label>
                                 <input type="text" id="ResAddressLine01" name="ResAddressLine01" maxlength="30" required>
                                 <div class="error-message">Please enter address line 1</div>
@@ -817,6 +848,48 @@
                                 <div class="error-message">Please select nationality</div>
                             </div>
                         </div>
+                        
+                        <!-- Correspondence Address (optional) -->
+                        <h3 style="margin: 25px 0 15px; color: #2c3e50;">Correspondence Address (optional)</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="CorrAddressStatus">Correspondence Address Same as Residential?</label>
+                                <div class="radio-group">
+                                    <div class="radio-option">
+                                        <input type="radio" id="corr_addr_y" name="CorrAddressStatus" value="Y">
+                                        <label for="corr_addr_y">Yes</label>
+                                    </div>
+                                    <div class="radio-option">
+                                        <input type="radio" id="corr_addr_n" name="CorrAddressStatus" value="N">
+                                        <label for="corr_addr_n">No</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="CorrAddressLine01">Corr Address Line 1</label>
+                                <input type="text" id="CorrAddressLine01" name="CorrAddressLine01" maxlength="30">
+                            </div>
+                            <div class="form-group">
+                                <label for="CorrAddressLine02">Corr Address Line 2</label>
+                                <input type="text" id="CorrAddressLine02" name="CorrAddressLine02" maxlength="30">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="CorrAddressLine03">Corr Address Line 3</label>
+                                <input type="text" id="CorrAddressLine03" name="CorrAddressLine03" maxlength="15">
+                            </div>
+                            <div class="form-group">
+                                <label for="CorrAddressTown">Corr Address Town</label>
+                                <input type="text" id="CorrAddressTown" name="CorrAddressTown" maxlength="15">
+                            </div>
+                            <div class="form-group">
+                                <label for="CorrAddressDistrict">Corr Address District</label>
+                                <input type="text" id="CorrAddressDistrict" name="CorrAddressDistrict" maxlength="10">
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -868,6 +941,44 @@
                                     <label for="OfficeEmail">Office Email</label>
                                     <input type="email" id="OfficeEmail" name="OfficeEmail" maxlength="100">
                                 </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="EmployeeComment">Employee Comment</label>
+                                    <textarea id="EmployeeComment" name="EmployeeComment" maxlength="500" rows="3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Business (optional) -->
+                        <h3 style="margin: 25px 0 15px; color: #2c3e50;">Business (optional)</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="NameOfBusiness">Name of Business</label>
+                                <input type="text" id="NameOfBusiness" name="NameOfBusiness" maxlength="100">
+                            </div>
+                            <div class="form-group">
+                                <label for="AddressOfBusiness">Address of Business</label>
+                                <input type="text" id="AddressOfBusiness" name="AddressOfBusiness" maxlength="150">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="OtherConnBusinessStatus">Other Connected Business Status</label>
+                                <div class="radio-group">
+                                    <div class="radio-option">
+                                        <input type="radio" id="other_biz_y" name="OtherConnBusinessStatus" value="Y">
+                                        <label for="other_biz_y">Yes</label>
+                                    </div>
+                                    <div class="radio-option">
+                                        <input type="radio" id="other_biz_n" name="OtherConnBusinessStatus" value="N">
+                                        <label for="other_biz_n">No</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="OtherConnBusinessDesc">Other Connected Business Description</label>
+                                <input type="text" id="OtherConnBusinessDesc" name="OtherConnBusinessDesc" maxlength="200">
                             </div>
                         </div>
                     </div>
@@ -1008,25 +1119,80 @@
                             <h3>PEP Details</h3>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="PEP_Q1">Are you a Politically Exposed Person?</label>
+                                    <label for="PEP_Q1" class="required">PEP Q1</label>
                                     <div class="radio-group">
                                         <div class="radio-option">
-                                            <input type="radio" id="pep_q1_y" name="PEP_Q1" value="Y">
+                                            <input type="radio" id="pep_q1_y" name="PEP_Q1" value="Y" required>
                                             <label for="pep_q1_y">Yes</label>
                                         </div>
                                         <div class="radio-option">
-                                            <input type="radio" id="pep_q1_n" name="PEP_Q1" value="N">
+                                            <input type="radio" id="pep_q1_n" name="PEP_Q1" value="N" required>
                                             <label for="pep_q1_n">No</label>
                                         </div>
                                     </div>
                                 </div>
-                                
                                 <div class="form-group">
-                                    <label for="PEP_Q1_Details">If Yes, provide details</label>
+                                    <label for="PEP_Q1_Details">PEP Q1 Details (optional)</label>
                                     <input type="text" id="PEP_Q1_Details" name="PEP_Q1_Details" maxlength="100">
                                 </div>
                             </div>
-                            <!-- Note: Additional PEP questions (Q2, Q3, Q4) should be added here if needed -->
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="PEP_Q2" class="required">PEP Q2</label>
+                                    <div class="radio-group">
+                                        <div class="radio-option">
+                                            <input type="radio" id="pep_q2_y" name="PEP_Q2" value="Y" required>
+                                            <label for="pep_q2_y">Yes</label>
+                                        </div>
+                                        <div class="radio-option">
+                                            <input type="radio" id="pep_q2_n" name="PEP_Q2" value="N" required>
+                                            <label for="pep_q2_n">No</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="PEP_Q2_Details">PEP Q2 Details (optional)</label>
+                                    <input type="text" id="PEP_Q2_Details" name="PEP_Q2_Details" maxlength="100">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="PEP_Q3" class="required">PEP Q3</label>
+                                    <div class="radio-group">
+                                        <div class="radio-option">
+                                            <input type="radio" id="pep_q3_y" name="PEP_Q3" value="Y" required>
+                                            <label for="pep_q3_y">Yes</label>
+                                        </div>
+                                        <div class="radio-option">
+                                            <input type="radio" id="pep_q3_n" name="PEP_Q3" value="N" required>
+                                            <label for="pep_q3_n">No</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="PEP_Q3_Details">PEP Q3 Details (optional)</label>
+                                    <input type="text" id="PEP_Q3_Details" name="PEP_Q3_Details" maxlength="100">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="PEP_Q4" class="required">PEP Q4</label>
+                                    <div class="radio-group">
+                                        <div class="radio-option">
+                                            <input type="radio" id="pep_q4_y" name="PEP_Q4" value="Y" required>
+                                            <label for="pep_q4_y">Yes</label>
+                                        </div>
+                                        <div class="radio-option">
+                                            <input type="radio" id="pep_q4_n" name="PEP_Q4" value="N" required>
+                                            <label for="pep_q4_n">No</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="PEP_Q4_Details">PEP Q4 Details (optional)</label>
+                                    <input type="text" id="PEP_Q4_Details" name="PEP_Q4_Details" maxlength="100">
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- Litigation Details (Conditional) -->
@@ -1034,6 +1200,79 @@
                             <div class="form-group">
                                 <label for="LitigationDetails">Litigation Details</label>
                                 <textarea id="LitigationDetails" name="LitigationDetails" maxlength="100" rows="3"></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- FATCA / USA / Dual Citizenship -->
+                        <h3 style="margin: 25px 0 15px; color: #2c3e50;">FATCA / USA & Dual Citizenship</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="UsaPersonStatus">USA Person Status</label>
+                                <div class="radio-group">
+                                    <div class="radio-option">
+                                        <input type="radio" id="usa_person_y" name="UsaPersonStatus" value="Y">
+                                        <label for="usa_person_y">Yes</label>
+                                    </div>
+                                    <div class="radio-option">
+                                        <input type="radio" id="usa_person_n" name="UsaPersonStatus" value="N">
+                                        <label for="usa_person_n">No</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="UsaTaxIdentificationNo">USA Tax Identification No</label>
+                                <input type="text" id="UsaTaxIdentificationNo" name="UsaTaxIdentificationNo" maxlength="50">
+                            </div>
+                            <div class="form-group">
+                                <label for="FactaDeclaration">FACTA Declaration</label>
+                                <div class="radio-group">
+                                    <div class="radio-option">
+                                        <input type="radio" id="facta_y" name="FactaDeclaration" value="Y">
+                                        <label for="facta_y">Yes</label>
+                                    </div>
+                                    <div class="radio-option">
+                                        <input type="radio" id="facta_n" name="FactaDeclaration" value="N">
+                                        <label for="facta_n">No</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="DualCitizenship">Dual Citizenship</label>
+                                <div class="radio-group">
+                                    <div class="radio-option">
+                                        <input type="radio" id="dual_cit_y" name="DualCitizenship" value="Y">
+                                        <label for="dual_cit_y">Yes</label>
+                                    </div>
+                                    <div class="radio-option">
+                                        <input type="radio" id="dual_cit_n" name="DualCitizenship" value="N">
+                                        <label for="dual_cit_n">No</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="DualCitizenCountry">Dual Citizen Country</label>
+                                <input type="text" id="DualCitizenCountry" name="DualCitizenCountry" maxlength="10">
+                            </div>
+                            <div class="form-group">
+                                <label for="DualCitizenPassport">Dual Citizen Passport No</label>
+                                <input type="text" id="DualCitizenPassport" name="DualCitizenPassport" maxlength="50">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="IsLKPassport">Is LK Passport?</label>
+                                <div class="radio-group">
+                                    <div class="radio-option">
+                                        <input type="radio" id="lk_passport_y" name="IsLKPassport" value="Y">
+                                        <label for="lk_passport_y">Yes</label>
+                                    </div>
+                                    <div class="radio-option">
+                                        <input type="radio" id="lk_passport_n" name="IsLKPassport" value="N">
+                                        <label for="lk_passport_n">No</label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1087,8 +1326,8 @@
             <input type="hidden" id="ApiUser" name="ApiUser" value="DIALOG">
             <input type="hidden" id="Status" name="Status" value="1">
             <input type="hidden" id="EnterUser" name="EnterUser" value="SYSTEM">
-            <input type="hidden" id="UserID" name="UserID">
             <input type="hidden" id="EnterDate" name="EnterDate">
+            <input type="hidden" id="UserID" name="UserID">
             <input type="hidden" id="ApiRefNo" name="ApiRefNo">
             
             <!-- Navigation Buttons -->
@@ -1605,7 +1844,14 @@
                 'IsPEP': 'N',
                 'PEP_Q1': 'N', 'PEP_Q2': 'N', 'PEP_Q3': 'N', 'PEP_Q4': 'N',
                 'LitigationStatus': 'N',
-                'BankAccountType': 'I'
+                'BankAccountType': 'I',
+                'ResAddressStatus': 'Y',
+                'CorrAddressStatus': 'N',
+                'OtherConnBusinessStatus': 'N',
+                'UsaPersonStatus': 'N',
+                'FactaDeclaration': 'N',
+                'DualCitizenship': 'N',
+                'IsLKPassport': 'N'
             };
             for (const name of Object.keys(radioDefaults)) {
                 if (!formData.has(name)) formData.append(name, radioDefaults[name]);
@@ -1618,10 +1864,13 @@
             if (!formData.has('EnterUser')) formData.append('EnterUser', 'SYSTEM');
             if (!formData.has('ApiUser')) formData.append('ApiUser', 'DIALOG');
 
-            // Add hidden fields
-            formData.append('UserID', generateUserId());
-            formData.append('EnterDate', new Date().toISOString().split('T')[0]);
-            formData.append('ApiRefNo', 'REF-' + Date.now());
+            // Add hidden fields (UserID = Email when available, else generated)
+            const userId = (formData.get('Email') && formData.get('Email').toString().trim()) || formData.get('UserID');
+            formData.set('UserID', (userId && userId.toString().trim()) ? userId : generateUserId());
+            if (!formData.get('EnterDate') || !formData.get('EnterDate').toString().trim()) {
+                formData.set('EnterDate', new Date().toISOString().split('T')[0]);
+            }
+            formData.set('ApiRefNo', 'REF-' + Date.now());
 
             // Show loading
             showStatus('Submitting application...', 'info');

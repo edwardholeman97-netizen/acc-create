@@ -167,13 +167,53 @@ function getAuthToken() {
 
 
 /**
+ * Generate SignData JSON for CSE API (same structure as thimira-v2.php).
+ * Uses UserID, NameDenoInitials, Email, MobileNo from form.
+ */
+function generateSignDataForApi($formData) {
+    $userId = $formData['UserID'] ?? $formData['Email'] ?? '';
+    $displayName = $formData['NameDenoInitials'] ?? '';
+    $email = $formData['Email'] ?? '';
+    $mobile = $formData['MobileNo'] ?? '';
+    return json_encode([
+        'DEVICE' => [
+            'MAC' => 'E1A683B05BBF494F',
+            'OS' => 'ANDROID',
+            'VERSION' => '31',
+            'MODEL' => 'SM-M315F',
+            'LOCATION' => '0,0'
+        ],
+        'AUTHENTICATOR' => [
+            'ATTESTATIONID' => 'A',
+            'SECURESTORE' => true,
+            'AUTHENTICATORTYPE' => 'MCA',
+            'USEROBJECT' => [
+                'ACCOUNTS' => [
+                    'ACOPENING' => ['ISREGISTERED' => true, 'USERNAME' => $userId],
+                    'ECONNECT' => ['CDSNO' => '', 'ISREGISTERED' => true, 'USERNAME' => $userId],
+                    'IPO' => ['ISREGISTERED' => false, 'USERNAME' => ''],
+                    'MYCSE' => ['ISREGISTERED' => true, 'USERNAME' => $userId]
+                ],
+                'DISPLAYNAME' => $displayName,
+                'EMAIL' => $email,
+                'MOBILENO' => ['COUNTRYCODE' => '+94', 'MOBILENO' => $mobile],
+                'USERNAME' => $userId,
+                'USERCONSENTACQUIRED' => 'TRUE'
+            ]
+        ]
+    ], JSON_UNESCAPED_SLASHES);
+}
+
+/**
  * Prepare user data for CSE API (SaveUser).
  * Field list, types, nullability: see API doc spreadsheet (link in CONFIG above).
  * Dates: yyyy/mm/dd per doc. STATUS: 1=submit, 4=resubmit. GetTitle/GetBroker/GetDistrict/GetCountry/GetBank/GetBankBranch/GetInvestAdvisors for dropdowns.
  */
 function prepareUserData($formData) {
     liveLog('Mapping form data to CSE fields');
-    $idProof = $formData['IdentificationProof'] ?? 'P';
+    // CSE API expects 1 char: N = NIC, P = Passport (column max length 1)
+    $idProofRaw = $formData['IdentificationProof'] ?? 'P';
+    $idProof = (strtoupper(substr(trim($idProofRaw), 0, 1)) === 'N') ? 'N' : 'P';
     // Doc: when IdentificationProof is P (Passport), NIC_NO must be empty
     $nicNo = ($idProof === 'P') ? '' : ($formData['NicNo'] ?? '');
     
@@ -247,7 +287,7 @@ function prepareUserData($formData) {
         
         // USA & Compliance
         'UsaPersonStatus' => $formData['UsaPersonStatus'] ?? 'N',
-        'UsaTaxIdentificationNo' => $formData['UsaTaxIdentifierNo'] ?? '',
+        'UsaTaxIdentificationNo' => $formData['UsaTaxIdentificationNo'] ?? $formData['UsaTaxIdentifierNo'] ?? '',
         'FactaDeclaration' => $formData['FactaDeclaration'] ?? 'N',
         'DualCitizenship' => $formData['DualCitizenship'] ?? 'N',
         'DualCitizenCountry' => $formData['DualCitizenCountry'] ?? '',
@@ -272,7 +312,7 @@ function prepareUserData($formData) {
         'Status' => $formData['Status'] ?? '1',
         'EnterUser' => $formData['EnterUser'] ?? 'SYSTEM',
         'SaveTable' => $formData['SaveTable'] ?? 'U',
-        'SignData' => $formData['SignData'] ?? '',
+        'SignData' => !empty($formData['SignData']) ? $formData['SignData'] : generateSignDataForApi($formData),
         
         // Additional Fields
         'StrockBrokerFirmName' => $formData['BrokerFirm'] ?? '', // Same as BrokerFirm
@@ -330,6 +370,16 @@ function saveUserData($token, $userData) {
     $result = trim($result);
     $response = $result ? json_decode($result, true) : null;
 
+    // CSE sometimes returns HTTP 200 with error text in body (e.g. Oracle exception)
+    $isErrorBody = $result && (
+        stripos($result, 'Exception') !== false ||
+        stripos($result, 'ORA-') !== false
+    );
+    if ($httpCode === 200 && $isErrorBody) {
+        liveLog('SaveUser returned 200 but body is error: ' . substr($result, 0, 300), 'error');
+        return ['accountId' => null, 'error' => strlen($result) > 500 ? substr($result, 0, 500) . '...' : $result];
+    }
+
     // Extract error message from CSE response (various common shapes)
     $cseError = '';
     if (is_array($response)) {
@@ -338,11 +388,17 @@ function saveUserData($token, $userData) {
     }
     if ($cseError === '' && $result && $httpCode >= 400) $cseError = $result;
 
-    if ($httpCode === 200 && $result) {
-        // Case 1: API returns raw number as JSON (e.g. 12345)
+    if ($httpCode === 200 && $result && !$isErrorBody) {
+        // Case 1: API returns number (JSON number or JSON string of digits)
         if (is_numeric($response)) {
             $accountId = (int)$response;
             liveLog("User saved. AccountID: $accountId");
+            return ['accountId' => $accountId, 'error' => ''];
+        }
+        // Case 1b: API returns quoted string with digits (e.g. "501149")
+        if (is_string($response) && preg_match('/^\d+$/', trim($response))) {
+            $accountId = (int)$response;
+            liveLog("User saved. AccountID (string): $accountId");
             return ['accountId' => $accountId, 'error' => ''];
         }
 
@@ -353,7 +409,7 @@ function saveUserData($token, $userData) {
             return ['accountId' => $accountId, 'error' => ''];
         }
 
-        // Case 3: API returns plain text number (no JSON)
+        // Case 3: API returns plain text number (no JSON) - raw body is just digits
         if (preg_match('/^\d+$/', $result)) {
             $accountId = (int)$result;
             liveLog("User saved. AccountID (plain): $accountId");
