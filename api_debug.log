@@ -1,0 +1,264 @@
+[2026-02-13 20:49:54] [info] API Request Started
+[2026-02-13 20:49:54] [info] Request is multipart/form-data (with files)
+[2026-02-13 20:49:54] [info] Processing Step: 1
+[2026-02-13 20:49:54] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-13 20:49:54] [info] Step 0: Authentication
+[2026-02-13 20:49:55] [info] Auth token received
+[2026-02-13 20:49:55] [info] === STEP 1: Create New Account ===
+[2026-02-13 20:49:55] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771015793491_934","fields":24}
+[2026-02-13 20:49:56] [info] SaveUser Response HTTP: 200
+[2026-02-13 20:49:56] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01400: cannot insert NULL into (\"APIUSERUAT\".\"EC_CDS_ACCOUNT_OPEN_PUBLIC\".\"RES_ADDRESS_STATUS\")\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-13 20:49:56] [error] Error: Failed to create account
+[2026-02-13 20:58:24] [info] API Request Started
+[2026-02-13 20:58:24] [info] Request is multipart/form-data (with files)
+[2026-02-13 20:58:24] [info] Processing Step: 1
+[2026-02-13 20:58:24] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-13 20:58:24] [info] Step 0: Authentication
+[2026-02-13 20:58:25] [info] Auth token received
+[2026-02-13 20:58:25] [info] === STEP 1: Create New Account ===
+[2026-02-13 20:58:25] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771016302091_811","fields":33}
+[2026-02-13 20:58:27] [info] SaveUser Response HTTP: 200
+[2026-02-13 20:58:27] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01400: cannot insert NULL into (\"APIUSERUAT\".\"EC_CDS_ACCOUNT_OPEN_PUBLIC\".\"RES_ADDRESS_STATUS_DESC\")\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-13 20:58:27] [error] Error: Failed to create account
+[2026-02-13 20:59:45] [info] API Request Started
+[2026-02-13 20:59:45] [info] Request is multipart/form-data (with files)
+[2026-02-13 20:59:45] [info] Processing Step: 1
+[2026-02-13 20:59:45] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-13 20:59:45] [info] Step 0: Authentication
+[2026-02-13 20:59:47] [info] Auth token received
+[2026-02-13 20:59:47] [info] === STEP 1: Create New Account ===
+[2026-02-13 20:59:47] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771016383371_472","fields":33}
+[2026-02-13 20:59:48] [info] SaveUser Response HTTP: 200
+[2026-02-13 20:59:48] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-13 20:59:48] [error] Error: Failed to create account
+[2026-02-13 21:14:01] [info] API Request Started
+[2026-02-13 21:14:01] [info] Request is multipart/form-data (with files)
+[2026-02-13 21:14:01] [info] Processing Step: 1
+[2026-02-13 21:14:01] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-13 21:14:01] [info] Step 0: Authentication
+[2026-02-13 21:14:02] [info] Auth token received
+[2026-02-13 21:14:02] [info] === STEP 1: Create New Account ===
+[2026-02-13 21:14:02] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771017238507_706","fields":41}
+[2026-02-13 21:14:03] [info] SaveUser Response HTTP: 200
+[2026-02-13 21:14:03] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-13 21:14:03] [error] Error: Failed to create account
+[2026-02-14 10:01:16] [info] API Request Started
+[2026-02-14 10:01:16] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:01:16] [info] Processing Step: 1
+[2026-02-14 10:01:16] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:01:16] [info] Step 0: Authentication
+[2026-02-14 10:01:17] [info] Auth token received
+[2026-02-14 10:01:17] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:01:17] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771063275438_273","fields":41}
+[2026-02-14 10:01:18] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:01:18] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:01:18] [error] Error: Failed to create account
+[2026-02-14 10:02:56] [info] API Request Started
+[2026-02-14 10:02:56] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:02:56] [info] Processing Step: 1
+[2026-02-14 10:02:56] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:02:56] [info] Step 0: Authentication
+[2026-02-14 10:02:57] [info] Auth token received
+[2026-02-14 10:02:57] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:02:57] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771063375031_905","fields":41}
+[2026-02-14 10:02:58] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:02:58] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:02:58] [error] Error: Failed to create account
+[2026-02-14 10:03:39] [info] API Request Started
+[2026-02-14 10:03:39] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:03:39] [info] Processing Step: 1
+[2026-02-14 10:03:39] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:03:39] [info] Step 0: Authentication
+[2026-02-14 10:03:40] [info] Auth token received
+[2026-02-14 10:03:40] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:03:40] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771063418498_259","fields":41}
+[2026-02-14 10:03:41] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:03:41] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:03:41] [error] Error: Failed to create account
+[2026-02-14 10:05:11] [info] API Request Started
+[2026-02-14 10:05:11] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:05:11] [info] Processing Step: 1
+[2026-02-14 10:05:11] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:05:11] [info] Step 0: Authentication
+[2026-02-14 10:05:12] [info] Auth token received
+[2026-02-14 10:05:12] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:05:12] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771063510420_488","fields":41}
+[2026-02-14 10:05:13] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:05:13] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:05:13] [error] Error: Failed to create account
+[2026-02-14 10:08:24] [info] API Request Started
+[2026-02-14 10:08:24] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:08:24] [info] Processing Step: 1
+[2026-02-14 10:08:24] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:08:24] [info] Step 0: Authentication
+[2026-02-14 10:08:25] [info] Auth token received
+[2026-02-14 10:08:25] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:08:25] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771063703194_890","fields":41}
+[2026-02-14 10:08:26] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:08:26] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:08:26] [error] Error: Failed to create account
+[2026-02-14 10:10:04] [info] API Request Started
+[2026-02-14 10:10:04] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:10:04] [info] Processing Step: 1
+[2026-02-14 10:10:04] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:10:04] [info] Step 0: Authentication
+[2026-02-14 10:10:21] [info] Auth token received
+[2026-02-14 10:10:21] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:10:21] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771063802933_286","fields":41}
+[2026-02-14 10:10:22] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:10:22] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:10:22] [error] Error: Failed to create account
+[2026-02-14 10:11:11] [info] API Request Started
+[2026-02-14 10:11:11] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:11:11] [info] Processing Step: 1
+[2026-02-14 10:11:11] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:11:11] [info] Step 0: Authentication
+[2026-02-14 10:11:12] [info] Auth token received
+[2026-02-14 10:11:12] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:11:12] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771063870598_298","fields":41}
+[2026-02-14 10:11:13] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:11:13] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:11:13] [error] Error: Failed to create account
+[2026-02-14 10:17:13] [info] API Request Started
+[2026-02-14 10:17:13] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:17:13] [info] Processing Step: 1
+[2026-02-14 10:17:13] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:17:13] [info] Step 0: Authentication
+[2026-02-14 10:17:14] [info] Auth token received
+[2026-02-14 10:17:14] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:17:14] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771064232181_38","fields":41}
+[2026-02-14 10:17:15] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:17:15] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:17:15] [error] Error: Failed to create account
+[2026-02-14 10:17:46] [info] API Request Started
+[2026-02-14 10:17:46] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:17:46] [info] Processing Step: 1
+[2026-02-14 10:17:46] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:17:46] [info] Step 0: Authentication
+[2026-02-14 10:17:47] [info] Auth token received
+[2026-02-14 10:17:47] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:17:47] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771064265363_741","fields":41}
+[2026-02-14 10:17:48] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:17:48] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:17:48] [error] Error: Failed to create account
+[2026-02-14 10:19:10] [info] API Request Started
+[2026-02-14 10:19:10] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:19:10] [info] Processing Step: 1
+[2026-02-14 10:19:10] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:19:10] [info] Step 0: Authentication
+[2026-02-14 10:19:12] [info] Auth token received
+[2026-02-14 10:19:12] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:19:12] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771064349960_821","fields":41}
+[2026-02-14 10:19:13] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:19:13] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:19:13] [error] Error: Failed to create account
+[2026-02-14 10:20:39] [info] API Request Started
+[2026-02-14 10:20:39] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:20:39] [info] Processing Step: 1
+[2026-02-14 10:20:39] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:20:39] [info] Step 0: Authentication
+[2026-02-14 10:20:41] [info] Auth token received
+[2026-02-14 10:20:41] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:20:41] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771064439009_298","fields":41}
+[2026-02-14 10:20:42] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:20:42] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:20:42] [error] Error: Failed to create account
+[2026-02-14 10:24:41] [info] API Request Started
+[2026-02-14 10:24:41] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:24:41] [info] Processing Step: 1
+[2026-02-14 10:24:41] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:24:41] [info] Step 0: Authentication
+[2026-02-14 10:24:42] [info] Auth token received
+[2026-02-14 10:24:42] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:24:42] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771064680678_259","fields":41}
+[2026-02-14 10:24:44] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:24:44] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:24:44] [error] Error: Failed to create account
+[2026-02-14 10:25:23] [info] API Request Started
+[2026-02-14 10:25:23] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:25:23] [info] Processing Step: 1
+[2026-02-14 10:25:23] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:25:23] [info] Step 0: Authentication
+[2026-02-14 10:25:24] [info] Auth token received
+[2026-02-14 10:25:24] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:25:24] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771064722117_721","fields":41}
+[2026-02-14 10:25:25] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:25:25] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:25:25] [error] Error: Failed to create account
+[2026-02-14 10:27:16] [info] API Request Started
+[2026-02-14 10:27:16] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:27:16] [info] Processing Step: 1
+[2026-02-14 10:27:16] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:27:16] [info] Step 0: Authentication
+[2026-02-14 10:27:17] [info] Auth token received
+[2026-02-14 10:27:17] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:27:17] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771064835429_513","fields":41}
+[2026-02-14 10:27:18] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:27:18] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:27:18] [error] Error: Failed to create account
+[2026-02-14 10:29:08] [info] API Request Started
+[2026-02-14 10:29:08] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:29:08] [info] Processing Step: 1
+[2026-02-14 10:29:08] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:29:08] [info] Step 0: Authentication
+[2026-02-14 10:29:09] [info] Auth token received
+[2026-02-14 10:29:09] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:29:09] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771064947464_28","fields":41}
+[2026-02-14 10:29:10] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:29:10] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:29:10] [error] Error: Failed to create account
+[2026-02-14 10:29:13] [info] API Request Started
+[2026-02-14 10:29:13] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:29:13] [info] Processing Step: 1
+[2026-02-14 10:29:13] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:29:13] [info] Step 0: Authentication
+[2026-02-14 10:29:14] [info] Auth token received
+[2026-02-14 10:29:14] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:29:14] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771064953422_151","fields":41}
+[2026-02-14 10:29:15] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:29:15] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:29:15] [error] Error: Failed to create account
+[2026-02-14 10:34:35] [info] API Request Started
+[2026-02-14 10:34:35] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:34:35] [info] Processing Step: 1
+[2026-02-14 10:34:35] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:34:35] [info] Step 0: Authentication
+[2026-02-14 10:34:36] [info] Auth token received
+[2026-02-14 10:34:36] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:34:36] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771065275710_787","fields":41}
+[2026-02-14 10:34:37] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:34:37] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:34:37] [error] Error: Failed to create account
+[2026-02-14 10:34:43] [info] API Request Started
+[2026-02-14 10:34:43] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:34:43] [info] Processing Step: 1
+[2026-02-14 10:34:43] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:34:43] [info] Step 0: Authentication
+[2026-02-14 10:34:44] [info] Auth token received
+[2026-02-14 10:34:44] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:34:44] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771065283651_395","fields":41}
+[2026-02-14 10:34:45] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:34:45] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:34:45] [error] Error: Failed to create account
+[2026-02-14 10:47:23] [info] API Request Started
+[2026-02-14 10:47:23] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:47:23] [info] Processing Step: 1
+[2026-02-14 10:47:23] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:47:23] [info] Step 0: Authentication
+[2026-02-14 10:47:24] [info] Auth token received
+[2026-02-14 10:47:24] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:47:24] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771066042139_718","fields":41}
+[2026-02-14 10:47:25] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:47:25] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:47:25] [error] Error: Failed to create account
+[2026-02-14 10:49:59] [info] API Request Started
+[2026-02-14 10:49:59] [info] Request is multipart/form-data (with files)
+[2026-02-14 10:49:59] [info] Processing Step: 1
+[2026-02-14 10:49:59] [info] Form data keys: Title, Initials, Surname, NameDenoInitials, MobileNo, TelphoneNo, Email, DateOfBirthday, Gender, IdentificationProof, NicNo, PassportNo, PassportExpDate, BrokerFirm, ExitCDSAccount, CDSAccountNo, TinNo, InvestmentOb, InvestmentStrategy, ResAddressLine01, ResAddressLine02, ResAddressLine03, ResAddressTown, ResAddressDistrict, Country, CountryOfResidency, Nationality, EmployeStatus, Occupation, NameOfEmployer, AddressOfEmployer, OfficePhoneNo, OfficeEmail, BankAccountNo, BankCode, BankBranch, BankAccountType, ExpValueInvestment, SourseOfFund, IsPEP, LitigationStatus, PEP_Q1_Details, LitigationDetails, UserID, EnterDate, ApiRefNo, ResAddressStatus
+[2026-02-14 10:49:59] [info] Step 0: Authentication
+[2026-02-14 10:50:00] [info] Auth token received
+[2026-02-14 10:50:00] [info] === STEP 1: Create New Account ===
+[2026-02-14 10:50:00] [info] Saving user data: {"AccountID":0,"UserID":"USER_1771066198478_370","fields":41}
+[2026-02-14 10:50:01] [info] SaveUser Response HTTP: 200
+[2026-02-14 10:50:01] [error] SaveUser failed. HTTP: 200 Response: "System.Data.OracleClient.OracleException (0x80131938): ORA-01722: invalid number\n\r\n   at System.Data.OracleClient.OracleConnection.CheckError(OciErrorHandle errorHandle, Int32 rc)\r\n   at System.Data.OracleClient.OracleCommand.Execute(OciStatementHandle statementHandle, CommandBehavior behavior, Boolean needRowid, OciRowidDescriptor& rowidDescriptor, ArrayList& resultParameterOrdinals)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQueryInternal(Boolean needRowid, OciRowidDescriptor& rowidDescriptor)\r\n   at System.Data.OracleClient.OracleCommand.ExecuteNonQuery()\r\n   at AccountCreate.Web.Api.BL.UserService.SaveUser(UserMapper user) in C:\\Users\\Amila\\Documents\\AmilaProjects\\PublicAPI\\AccountCreate.Web.Api.BL\\UserService.cs:line 205"
+[2026-02-14 10:50:01] [error] Error: Failed to create account
