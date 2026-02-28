@@ -39,6 +39,12 @@ define('APP_DEBUG', env('APP_DEBUG', '0') === '1' || env('APP_DEBUG', '0') === '
 // ----- CORS (production: set to your frontend origin, e.g. https://cds.yourdomain.com) -----
 define('CORS_ALLOW_ORIGIN', env('CORS_ALLOW_ORIGIN', '*'));
 
+// ----- Database (MySQL) -----
+define('DB_HOST', env('DB_HOST', 'localhost'));
+define('DB_NAME', env('DB_NAME', 'cds_accounts'));
+define('DB_USER', env('DB_USER', ''));
+define('DB_PASSWORD', env('DB_PASSWORD', ''));
+
 // ----- Paths (token cache: outside web root or in a non-served directory) -----
 $storageDir = env('CSE_STORAGE_PATH', __DIR__ . '/storage');
 if (!is_dir($storageDir)) {

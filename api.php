@@ -18,57 +18,78 @@ $response = ['success' => false, 'message' => '', 'accountId' => null];
 try {
     liveLog('API Request Started');
     
-    // ==================== FIX: HANDLE BOTH JSON AND FORM-DATA ====================
+    // ==================== HANDLE JSON AND MULTIPART ====================
     $formData = [];
     $hasFiles = false;
+    $step = null;  // 'submit' = form only (get accountId), 'upload' = images only (need accountId)
     
-    // Check if it's multipart/form-data (file upload)
     if ($_SERVER['CONTENT_TYPE'] && strpos($_SERVER['CONTENT_TYPE'], 'multipart/form-data') !== false) {
-        liveLog('Request is multipart/form-data (with files)');
-        $hasFiles = true;
-        
-        // Extract form fields from POST (excluding files)
+        liveLog('Request is multipart/form-data');
+        $hasFiles = !empty($_FILES);
         foreach ($_POST as $key => $value) {
             $formData[$key] = $value;
         }
-        
-        // Add UserID if not provided
+        $step = $formData['step'] ?? null;
         if (!isset($formData['UserID'])) {
-            $formData['UserID'] = generateUserId();
+            $formData['UserID'] = $formData['Email'] ?? generateUserId();
         }
-        
     } else {
-        // It's JSON request
         liveLog('Request is JSON');
         $input = json_decode(file_get_contents('php://input'), true);
-        
         if (!$input || !isset($input['formData'])) {
             throw new Exception('Invalid or empty JSON data');
         }
-        
         $formData = $input['formData'];
+        $step = $input['step'] ?? null;
     }
     
     if (empty($formData)) {
         throw new Exception('No form data received');
     }
-    
-    liveLog('Form data processed successfully');
-    // ==================== END FIX ====================
+    liveLog('Form data processed. Step: ' . ($step ?: 'full'));
 
-    // Validate required fields (doc Null? Y = not nullable = required)
+    // ==================== STEP: UPLOAD IMAGES ONLY (after account created) ====================
+    if ($step === 'upload') {
+        $accountId = $formData['accountId'] ?? $formData['account_id'] ?? null;
+        if (!$accountId) {
+            throw new Exception('Account ID required for image upload');
+        }
+        $accountId = (string)preg_replace('/[^0-9]/', '', $accountId);
+        if ($accountId === '') {
+            throw new Exception('Invalid account ID');
+        }
+        
+        liveLog('Step UPLOAD: Uploading images with AccountID=' . $accountId);
+        if (empty($formData['UserID'])) {
+            $formData['UserID'] = $formData['Email'] ?? generateUserId();
+        }
+        $token = getAuthToken();
+        if (!$token) throw new Exception('Authentication failed');
+
+        $imageUploadSuccess = uploadImages($token, (int)$accountId, $formData);
+        liveLog('Image upload completed: ' . ($imageUploadSuccess ? 'Success' : 'Partial/Failed'));
+
+        $imagePaths = saveImagesToStorage($accountId);
+        updateSubmissionImages($accountId, $imagePaths);
+
+        $response['success'] = true;
+        $response['message'] = 'Images uploaded';
+        $response['accountId'] = $accountId;
+        $response['imagesUploaded'] = $imageUploadSuccess;
+        liveLog('Upload step completed');
+        echo json_encode($response);
+        exit;
+    }
+
+    // ==================== STEP: SUBMIT FORM ONLY (create account, no images) ====================
     validateRequiredSaveUserFields($formData);
-
-    // Step 1: Authenticate
     liveLog('Step 1: Authentication');
     $token = getAuthToken();
     if (!$token) throw new Exception('Authentication failed');
 
-    // Step 2: Prepare user data
     liveLog('Step 2: Preparing user data');
     $userData = prepareUserData($formData);
 
-    // Step 3: Save user
     liveLog('Step 3: Saving user data to CSE');
     $saveResult = saveUserData($token, $userData);
     $accountId = $saveResult['accountId'] ?? null;
@@ -77,31 +98,17 @@ try {
         throw new Exception($msg ?: 'Failed to save user data');
     }
 
-    // Step 4: Upload images (if any)
-    liveLog('Step 4: Uploading images');
-    $imageUploadSuccess = false;
-
-    if ($hasFiles && !empty($_FILES)) {
-        // Form was submitted with files
-        $imageUploadSuccess = uploadImages($token, $accountId, $formData);
-        liveLog('Image upload completed: ' . ($imageUploadSuccess ? 'Success' : 'Partial/Failed'));
-    } else {
-        // No files in this request
-        liveLog('No image files in this request');
-        $imageUploadSuccess = true;
-    }
-
-    // Step 5: Save source of funds
-    liveLog('Step 5: Saving source of funds');
+    liveLog('Step 4: Saving source of funds');
     $sourceFundsSuccess = saveSourceFunds($token, $accountId, $formData);
 
-    // Success response
+    liveLog('Step 5: Saving submission to DB');
+    saveSubmissionToDB((string)$accountId, $formData, []);
+
     $response['success'] = true;
-    $response['message'] = 'Account created successfully';
+    $response['message'] = 'Account created.';
     $response['accountId'] = $accountId;
     $response['sourceFundsSaved'] = $sourceFundsSuccess;
-    $response['imagesUploaded'] = $imageUploadSuccess;
-    liveLog('All operations completed');
+    liveLog('Submit step completed. AccountID=' . $accountId);
 
 } catch (Exception $e) {
     liveLog('Error: ' . $e->getMessage(), 'error');
@@ -214,8 +221,8 @@ function prepareUserData($formData) {
     // CSE API expects 1 char: N = NIC, P = Passport (column max length 1)
     $idProofRaw = $formData['IdentificationProof'] ?? 'P';
     $idProof = (strtoupper(substr(trim($idProofRaw), 0, 1)) === 'N') ? 'N' : 'P';
-    // Doc: when IdentificationProof is P (Passport), NIC_NO must be empty
-    $nicNo = ($idProof === 'P') ? '' : ($formData['NicNo'] ?? '');
+    // When Passport: Oracle NIC_NO is NOT NULL, send placeholder (empty string becomes NULL)
+    $nicNo = ($idProof === 'P') ? 'NA' : ($formData['NicNo'] ?? '');
     
     $mappedData = [
         // Personal (doc: TITLE GetTitle, INITIALS 15, SURNAME 50, NAMES_DENO_INITIALS 160, MOBILE 16, EMAIL 100)
@@ -546,6 +553,8 @@ function saveSourceFunds($token, $accountId, $formData) {
  * Endpoint: /api/ImageUpload/UploadImageOnebyOne
  * CSE requires: first step → SaveUser (get AccountID); second step → send documents one by one.
  *
+ * Doc payload: ACCOUNT_ID, USER_ID, IMAGE_TYPE, IMAGE_BASE64_TYPE (base64), IMAGE_CT (mime). Max 2MB.
+ *
  * @param string $token Authentication token (valid 15 min)
  * @param int $accountId Account ID from SaveUser response
  * @param array $formData Form data (for UserID)
@@ -553,32 +562,47 @@ function saveSourceFunds($token, $accountId, $formData) {
  */
 function uploadImages($token, $accountId, $formData) {
     $userId = $formData['UserID'] ?? generateUserId();
-
-    // Order must be sequential: one by one (NIC Front, NIC Back, etc.). No parallel.
     $uploadOrder = [
-        'selfie_upload'   => 'Selfie',
-        'nic_front_upload' => 'NIC Front',
-        'nic_back_upload'  => 'NIC Back',
-        'passport_upload'  => 'Passport'
+        'selfie_upload'   => 1,
+        'nic_front_upload' => 2,
+        'nic_back_upload'  => 3,
+        'passport_upload'  => 4
     ];
 
     $allSuccess = true;
-    foreach ($uploadOrder as $fileKey => $imageTypeLabel) {
+    $first = true;
+    foreach ($uploadOrder as $fileKey => $imageType) {
         if (empty($_FILES[$fileKey]['tmp_name']) || $_FILES[$fileKey]['error'] !== UPLOAD_ERR_OK) {
             continue;
         }
+        // Wait between uploads (one by one) – CSE may require sequential processing
+        if (!$first) {
+            sleep(2);
+        }
+        $first = false;
 
-        liveLog("Uploading document: $imageTypeLabel (one by one, sequential)");
+        $label = ['1' => 'Selfie', '2' => 'NIC Front', '3' => 'NIC Back', '4' => 'Passport'][(string)$imageType] ?? $imageType;
+        liveLog("Uploading document: $label (one by one, sequential)");
 
-        $url = CSE_API_BASE_URL . '/api/ImageUpload/UploadImageOnebyOne';
         $filePath = $_FILES[$fileKey]['tmp_name'];
+        if (filesize($filePath) > 2 * 1024 * 1024) {
+            liveLog("Image $label exceeds 2MB, skipping", 'error');
+            $allSuccess = false;
+            continue;
+        }
+        $url = CSE_API_BASE_URL . '/api/ImageUpload/UploadImageOnebyOne';
+        $imageBase64 = base64_encode(file_get_contents($filePath));
+        $mime = $_FILES[$fileKey]['type'] ?? '';
+        if (!preg_match('#^image/(jpeg|jpg|png|gif)#i', $mime)) {
+            $mime = 'image/jpeg';
+        }
 
-        // If Swagger uses different param names (e.g. File, DocumentType), adjust here
-        $postFields = [
-            'AccountID'  => $accountId,
-            'UserID'     => $userId,
-            'ImageType'  => $imageTypeLabel,
-            'file'       => new CURLFile($filePath, $_FILES[$fileKey]['type'] ?? 'image/jpeg', $_FILES[$fileKey]['name'])
+        $payload = [
+            'ACCOUNT_ID'        => (int)$accountId,
+            'USER_ID'           => $userId,
+            'IMAGE_TYPE'        => (string)$imageType,
+            'IMAGE_BASE64_TYPE' => $imageBase64,
+            'IMAGE_CT'          => $mime
         ];
 
         $ch = curl_init();
@@ -586,12 +610,13 @@ function uploadImages($token, $accountId, $formData) {
             CURLOPT_URL            => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST           => true,
-            CURLOPT_POSTFIELDS     => $postFields,
+            CURLOPT_POSTFIELDS     => json_encode($payload),
             CURLOPT_HTTPHEADER     => [
                 'Authorization: Bearer ' . $token,
+                'Content-Type: application/json; charset=utf-8',
                 'Accept: application/json'
             ],
-            CURLOPT_SSL_VERIFYPEER  => false,
+            CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_TIMEOUT        => 60
         ]);
 
@@ -600,14 +625,81 @@ function uploadImages($token, $accountId, $formData) {
         curl_close($ch);
 
         if ($httpCode !== 200) {
-            liveLog("Upload failed for $imageTypeLabel: HTTP $httpCode - $result", 'error');
+            liveLog("Upload failed for $label: HTTP $httpCode - $result", 'error');
             $allSuccess = false;
         } else {
-            liveLog("Uploaded: $imageTypeLabel");
+            liveLog("Uploaded: $label");
         }
     }
 
     return $allSuccess;
+}
+
+/**
+ * Save uploaded images to server storage: storage/uploads/{account_id}/
+ * Returns array of saved paths keyed by type.
+ */
+function saveImagesToStorage(string $accountId): array {
+    $baseDir = rtrim(CSE_STORAGE_PATH, '/') . '/uploads/' . preg_replace('/[^a-zA-Z0-9_-]/', '', $accountId);
+    if (!is_dir($baseDir)) {
+        @mkdir($baseDir, 0750, true);
+    }
+    $paths = [];
+    $map = [
+        'selfie_upload'   => 'selfie',
+        'nic_front_upload' => 'nic_front',
+        'nic_back_upload'  => 'nic_back',
+        'passport_upload'  => 'passport'
+    ];
+    foreach ($map as $fileKey => $baseName) {
+        if (empty($_FILES[$fileKey]['tmp_name']) || $_FILES[$fileKey]['error'] !== UPLOAD_ERR_OK) {
+            continue;
+        }
+        $ext = pathinfo($_FILES[$fileKey]['name'] ?? '', PATHINFO_EXTENSION) ?: 'jpg';
+        if (!in_array(strtolower($ext), ['jpg', 'jpeg', 'png'], true)) {
+            $ext = 'jpg';
+        }
+        $dest = $baseDir . '/' . $baseName . '.' . $ext;
+        if (@copy($_FILES[$fileKey]['tmp_name'], $dest)) {
+            $paths[$baseName] = 'uploads/' . basename($baseDir) . '/' . basename($dest);
+            liveLog("Saved image to: $dest");
+        }
+    }
+    return $paths;
+}
+
+/**
+ * Update only image_paths for an existing submission.
+ */
+function updateSubmissionImages(string $accountId, array $imagePaths): void {
+    try {
+        require_once __DIR__ . '/database/connection.php';
+        $pdo = getDb();
+        $stmt = $pdo->prepare('UPDATE cds_submissions SET image_paths = ?, updated_at = NOW() WHERE account_id = ?');
+        $stmt->execute([json_encode($imagePaths, JSON_UNESCAPED_UNICODE), $accountId]);
+        if ($stmt->rowCount() > 0) {
+            liveLog('Updated image paths in DB: account_id=' . $accountId);
+        }
+    } catch (Throwable $e) {
+        liveLog('DB image update failed: ' . $e->getMessage(), 'error');
+    }
+}
+
+/**
+ * Save submission record to database.
+ */
+function saveSubmissionToDB(string $accountId, array $formData, array $imagePaths = []): void {
+    try {
+        require_once __DIR__ . '/database/connection.php';
+        $pdo = getDb();
+        $stmt = $pdo->prepare('INSERT INTO cds_submissions (account_id, form_data, image_paths) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE form_data = VALUES(form_data), image_paths = VALUES(image_paths), updated_at = NOW()');
+        $formJson = json_encode($formData, JSON_UNESCAPED_UNICODE);
+        $imgJson = empty($imagePaths) ? null : json_encode($imagePaths, JSON_UNESCAPED_UNICODE);
+        $stmt->execute([$accountId, $formJson, $imgJson]);
+        liveLog('Saved submission to DB: account_id=' . $accountId);
+    } catch (Throwable $e) {
+        liveLog('DB save failed: ' . $e->getMessage(), 'error');
+    }
 }
 
 // ==================== VALIDATION (doc: Null? Y = required) ====================
@@ -625,9 +717,11 @@ function validateRequiredSaveUserFields($formData) {
         'EmployeStatus', 'ExpValueInvestment', 'IsPEP', 'LitigationStatus',
         'CountryOfResidency', 'Nationality', 'ClientType', 'Residency'
     ];
-    $idProof = trim($formData['IdentificationProof'] ?? '');
-    if ($idProof === 'P') {
+    $idProofRaw = trim($formData['IdentificationProof'] ?? '');
+    $isPassport = (strtoupper(substr($idProofRaw, 0, 1)) === 'P');
+    if ($isPassport) {
         $required[] = 'PassportNo';
+        $required[] = 'PassportExpDate';
     } else {
         $required[] = 'NicNo';
     }

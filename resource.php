@@ -179,6 +179,21 @@ try {
             
         case 'getBrokers':
             $result = getBrokers();
+            // Restrict to S C SECURITIES only (or ALLOWED_BROKER_FILTER from .env)
+            $filter = env('ALLOWED_BROKER_FILTER', 'S C SECURITIES');
+            if ($filter !== '' && !empty($result['data'])) {
+                $raw = $result['data'];
+                $items = (is_array($raw) && isset($raw[0]) && is_array($raw[0])) ? $raw : ($raw['Data'] ?? $raw['data'] ?? []);
+                if (is_array($items)) {
+                    $filterNorm = preg_replace('/\s+/', ' ', trim($filter));
+                    $filtered = array_values(array_filter($items, function ($b) use ($filterNorm) {
+                        $name = $b['BROKER_FULL_NAME'] ?? $b['BrokerFullName'] ?? '';
+                        $nameNorm = preg_replace('/\s+/', ' ', trim((string)$name));
+                        return stripos($nameNorm, $filterNorm) !== false;
+                    }));
+                    $result['data'] = $filtered;
+                }
+            }
             break;
 
         case 'getTitles':

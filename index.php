@@ -1,3 +1,4 @@
+<?php require_once __DIR__ . '/includes/form_constants.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -5,499 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CDS Account Opening</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: #f5f7fa;
-            padding: 20px;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 16px;
-        }
-
-        .form-container {
-            padding: 30px;
-        }
-
-        .form-section {
-            margin-bottom: 40px;
-            padding: 25px;
-            background-color: #f9fafb;
-            border-radius: 8px;
-            border-left: 4px solid #3498db;
-        }
-
-        .section-title {
-            font-size: 20px;
-            color: #2c3e50;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-        }
-
-        .section-title i {
-            margin-right: 10px;
-            color: #3498db;
-        }
-
-        .form-row {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 0 -10px 20px;
-        }
-
-        .form-group {
-            flex: 1 0 300px;
-            padding: 0 10px;
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #34495e;
-            font-size: 14px;
-        }
-
-        .required::after {
-            content: " *";
-            color: #e74c3c;
-        }
-
-        input,
-        select,
-        textarea {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 15px;
-            transition: border 0.3s;
-        }
-
-        input:focus,
-        select:focus,
-        textarea:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-        }
-
-        .radio-group,
-        .checkbox-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-top: 5px;
-        }
-
-        .radio-option,
-        .checkbox-option {
-            display: flex;
-            align-items: center;
-        }
-
-        .radio-option input,
-        .checkbox-option input {
-            width: auto;
-            margin-right: 8px;
-        }
-
-        .form-note {
-            font-size: 13px;
-            color: #7f8c8d;
-            margin-top: 5px;
-            font-style: italic;
-        }
-
-        .form-actions {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #eaeaea;
-        }
-
-        .btn {
-            padding: 14px 30px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-submit {
-            background-color: #2ecc71;
-            color: white;
-        }
-
-        .btn-submit:hover {
-            background-color: #27ae60;
-        }
-
-        .btn-reset {
-            background-color: #e74c3c;
-            color: white;
-        }
-
-        .btn-reset:hover {
-            background-color: #c0392b;
-        }
-
-        .conditional-field {
-            display: none;
-            margin-top: 15px;
-            padding: 15px;
-            background-color: #f0f7ff;
-            border-radius: 6px;
-            border-left: 3px solid #3498db;
-        }
-
-        .conditional-field.active {
-            display: block;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        .error-message {
-            color: #e74c3c;
-            font-size: 13px;
-            margin-top: 5px;
-            display: none;
-        }
-
-        .field-error input,
-        .field-error select,
-        .field-error textarea {
-            border-color: #e74c3c;
-        }
-
-        .field-error .error-message {
-            display: block;
-        }
-
-        .progress-bar {
-            height: 5px;
-            background: #e0e0e0;
-            margin: 20px 0;
-            border-radius: 5px;
-            overflow: hidden;
-        }
-
-        .progress {
-            height: 100%;
-            background: #2ecc71;
-            width: 0%;
-            transition: width 0.5s ease;
-        }
-
-        .status-message {
-            padding: 15px;
-            border-radius: 6px;
-            margin: 10px 0;
-            display: none;
-        }
-
-        .status-success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status-error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .status-info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-
-        .upload-section {
-            margin-top: 20px;
-            padding: 20px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            border: 2px dashed #dee2e6;
-        }
-
-        .upload-btn {
-            background-color: #3498db;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            display: inline-block;
-            margin-top: 10px;
-        }
-
-        .upload-btn:hover {
-            background-color: #2980b9;
-        }
-
-        .preview-container {
-            margin-top: 15px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .preview-item {
-            width: 150px;
-            text-align: center;
-        }
-
-        .preview-img {
-            width: 150px;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-
-        /* Step Navigation */
-        .step-navigation {
-            display: flex;
-            justify-content: space-between;
-            margin: 30px 0;
-            padding: 0 20px;
-        }
-
-        .step {
-            flex: 1;
-            text-align: center;
-            position: relative;
-            padding: 10px 0;
-        }
-
-        .step:not(:last-child)::after {
-            content: '';
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            width: 100%;
-            height: 2px;
-            background: #ddd;
-            z-index: 1;
-        }
-
-        .step.active:not(:last-child)::after {
-            background: #2ecc71;
-        }
-
-        .step-number {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            line-height: 40px;
-            border-radius: 50%;
-            background: #ddd;
-            color: #666;
-            font-weight: bold;
-            position: relative;
-            z-index: 2;
-        }
-
-        .step.active .step-number {
-            background: #2ecc71;
-            color: white;
-        }
-
-        .step-title {
-            display: block;
-            margin-top: 8px;
-            font-size: 14px;
-            color: #666;
-        }
-
-        .step.active .step-title {
-            color: #2ecc71;
-            font-weight: 600;
-        }
-
-        /* Form Steps */
-        .form-steps-container {
-            position: relative;
-        }
-
-        .form-step {
-            display: none;
-            animation: fadeIn 0.5s ease;
-        }
-
-        .form-step.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Step Buttons */
-        .step-buttons {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #eaeaea;
-        }
-
-        .btn-prev {
-            background-color: #95a5a6;
-            color: white;
-        }
-
-        .btn-prev:hover {
-            background-color: #7f8c8d;
-        }
-
-        .btn-next {
-            background-color: #3498db;
-            color: white;
-        }
-
-        .btn-next:hover {
-            background-color: #2980b9;
-        }
-
-        /* Enhanced Dropdown */
-        .enhanced-dropdown {
-            position: relative;
-        }
-
-        .searchable-dropdown {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 15px;
-            background: white;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .searchable-dropdown::after {
-            content: '▼';
-            font-size: 12px;
-            color: #666;
-        }
-
-        .dropdown-options {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            max-height: 300px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .dropdown-options.active {
-            display: block;
-        }
-
-        .dropdown-search {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            position: sticky;
-            top: 0;
-            background: white;
-            z-index: 2;
-        }
-
-        .dropdown-search input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .dropdown-options-list {
-            max-height: 250px;
-            overflow-y: auto;
-        }
-
-        .dropdown-option {
-            padding: 10px 15px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .dropdown-option:hover {
-            background: #f5f5f5;
-        }
-
-        .dropdown-option.selected {
-            background: #3498db;
-            color: white;
-        }
-
-        @media (max-width: 768px) {
-            .form-group {
-                flex: 1 0 100%;
-            }
-
-            .form-section {
-                padding: 15px;
-            }
-
-            .form-container {
-                padding: 15px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="assets/css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
@@ -513,8 +22,6 @@
     <div class="progress-bar">
         <div class="progress" id="form-progress"></div>
     </div>
-    
-    <div class="status-message" id="status-message"></div>
 
     <!-- Step Navigation -->
     <div class="step-navigation">
@@ -549,6 +56,7 @@
     </div>
 
     <div class="form-container">
+        <div class="status-message" id="status-message" role="alert" aria-live="polite"></div>
         <form id="cdsAccountForm">
             <!-- Form Steps Container -->
             <div class="form-steps-container">
@@ -569,7 +77,6 @@
                                     <option value="Dr">Dr</option>
                                     <option value="Prof">Prof</option>
                                 </select>
-                                <div class="form-note">From API: GetTitle</div>
                                 <div class="error-message">Please select a title</div>
                             </div>
                             
@@ -650,15 +157,16 @@
                                 <label for="IdentificationProof" class="required">Identification Proof</label>
                                 <select id="IdentificationProof" name="IdentificationProof" required>
                                     <option value="">Select ID Type</option>
-                                    <option value="NIC">NIC</option>
-                                    <option value="Passport">Passport</option>
+                                    <?php foreach (get_form_id_proof_options() as $val => $label): ?>
+                                    <option value="<?= htmlspecialchars($val) ?>"><?= htmlspecialchars($label) ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                                 <div class="error-message">Please select identification proof type</div>
                             </div>
                             
                             <div class="form-group" id="nic-field">
                                 <label for="NicNo" class="required">NIC No</label>
-                                <input type="text" id="NicNo" name="NicNo" maxlength="12" pattern="[0-9]{9,12}[VX]?" title="Enter valid NIC number (e.g., 123456789V)">
+                                <input type="text" required id="NicNo" name="NicNo" maxlength="12" pattern="[0-9]{9,12}[VX]?" title="Enter valid NIC number (e.g., 123456789V)">
                                 <div class="form-note">Format: 123456789V or 200012345678</div>
                                 <div class="error-message">Please enter valid NIC number</div>
                             </div>
@@ -692,7 +200,6 @@
                                     <option value="">Select Broker</option>
                                     <!-- Will be populated dynamically -->
                                 </select>
-                                <div class="form-note">Data from: /api/OtherServices/GetBroker</div>
                                 <div class="error-message">Please select broker firm</div>
                             </div>
                             
@@ -730,7 +237,6 @@
                                     <option value="">None</option>
                                     <!-- Populated from /api/OtherServices/GetInvestAdvisors (doc) -->
                                 </select>
-                                <div class="form-note">Optional; from API: GetInvestAdvisors</div>
                             </div>
                         </div>
                         <div class="form-row">
@@ -772,12 +278,9 @@
                                 <label for="ResAddressStatusDesc" class="required">Residential Address Status Description</label>
                                 <select id="ResAddressStatusDesc" name="ResAddressStatusDesc" required>
                                     <option value="">Select</option>
-                                    <option value="1">1 - Owner</option>
-                                    <option value="2">2 - With parents</option>
-                                    <option value="3">3 - Lease / Rent</option>
-                                    <option value="4">4 - Friend's / Relative's</option>
-                                    <option value="5">5 - Board / Lodging</option>
-                                    <option value="6">6 - Official</option>
+                                    <?php foreach (get_form_res_address_status_options() as $val => $label): ?>
+                                    <option value="<?= htmlspecialchars($val) ?>"><?= htmlspecialchars($label) ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                                 <div class="error-message">Please select status description</div>
                             </div>
@@ -903,11 +406,9 @@
                                 <label for="EmployeStatus" class="required">Employment Status</label>
                                 <select id="EmployeStatus" name="EmployeStatus" required>
                                     <option value="">Select Status</option>
-                                    <option value="Y">Employed</option>
-                                    <option value="N">Unemployed</option>
-                                    <option value="S">Self-Employed</option>
-                                    <option value="T">Student</option>
-                                    <option value="R">Retired</option>
+                                    <?php foreach (get_form_employment_status_options() as $val => $label): ?>
+                                    <option value="<?= htmlspecialchars($val) ?>"><?= htmlspecialchars($label) ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                                 <div class="error-message">Please select employment status</div>
                             </div>
@@ -1003,7 +504,6 @@
                                     <option value="">Select Bank</option>
                                     <!-- Will be populated dynamically -->
                                 </select>
-                                <div class="form-note">Data from: /api/OtherServices/GetBank</div>
                                 <div class="error-message">Please select bank</div>
                             </div>
                         </div>
@@ -1015,7 +515,6 @@
                                     <option value="">Select Branch</option>
                                     <!-- Will be populated dynamically -->
                                 </select>
-                                <div class="form-note">Data from: /api/OtherServices/GetBankBranch</div>
                                 <div class="error-message">Please select bank branch</div>
                             </div>
                             
@@ -1045,13 +544,10 @@
                                 <label for="ExpValueInvestment" class="required">Expected Value of Investment</label>
                                 <select id="ExpValueInvestment" name="ExpValueInvestment" required>
                                     <option value="">Select Range</option>
-                                    <option value="1">Less than LKR 100,000</option>
-                                    <option value="2">LKR 100,000 - 500,000</option>
-                                    <option value="3">LKR 500,000 - 1,000,000</option>
-                                    <option value="4">LKR 1,000,000 - 5,000,000</option>
-                                    <option value="5">More than LKR 5,000,000</option>
+                                    <?php foreach (get_form_exp_value_options() as $val => $label): ?>
+                                    <option value="<?= htmlspecialchars($val) ?>"><?= htmlspecialchars($label) ?></option>
+                                    <?php endforeach; ?>
                                 </select>
-                                <div class="form-note">Ref. excel sheet</div>
                                 <div class="error-message">Please select expected investment value</div>
                             </div>
                             
@@ -1059,17 +555,9 @@
                                 <label for="SourseOfFund">Source of Funds</label>
                                 <select id="SourseOfFund" name="SourseOfFund">
                                     <option value="">Select Source</option>
-                                    <option value="1">Salary/Profit Income</option>
-                                    <option value="2">Investment Proceeds/Savings</option>
-                                    <option value="3">Sales and Business Turnover</option>
-                                    <option value="4">Contract Proceeds</option>
-                                    <option value="5">Sales of Property/Assets</option>
-                                    <option value="6">Gifts</option>
-                                    <option value="7">Donations/Charities</option>
-                                    <option value="8">Commission Income</option>
-                                    <option value="9">Family Remittance</option>
-                                    <option value="10">Export proceeds</option>
-                                    <option value="11">Membership contribution</option>
+                                    <?php foreach (get_form_source_of_funds_options() as $val => $label): ?>
+                                    <option value="<?= htmlspecialchars($val) ?>"><?= htmlspecialchars($label) ?></option>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                         </div>
@@ -1287,14 +775,12 @@
                                 <div class="form-group">
                                     <label for="selfie_upload" class="required">Selfie Photo</label>
                                     <input type="file" id="selfie_upload" name="selfie_upload" accept="image/jpeg,image/png">
-                                    <div class="form-note">IMAGE_TYPE: 1</div>
                                     <div class="error-message">Please upload selfie photo</div>
                                 </div>
                                 
                                 <div class="form-group">
                                     <label for="nic_front_upload" class="required">NIC Front</label>
                                     <input type="file" id="nic_front_upload" name="nic_front_upload" accept="image/jpeg,image/png">
-                                    <div class="form-note">IMAGE_TYPE: 2</div>
                                     <div class="error-message">Please upload NIC front photo</div>
                                 </div>
                             </div>
@@ -1303,14 +789,12 @@
                                 <div class="form-group">
                                     <label for="nic_back_upload" class="required">NIC Back</label>
                                     <input type="file" id="nic_back_upload" name="nic_back_upload" accept="image/jpeg,image/png">
-                                    <div class="form-note">IMAGE_TYPE: 3</div>
                                     <div class="error-message">Please upload NIC back photo</div>
                                 </div>
                                 
                                 <div class="form-group">
                                     <label for="passport_upload">Passport (if applicable)</label>
                                     <input type="file" id="passport_upload" name="passport_upload" accept="image/jpeg,image/png">
-                                    <div class="form-note">IMAGE_TYPE: 4</div>
                                 </div>
                             </div>
                             
@@ -1339,7 +823,8 @@
                     Next <i class="fas fa-arrow-right"></i>
                 </button>
                 <button type="button" class="btn btn-submit" id="submit-btn" style="display: none;">
-                    <i class="fas fa-paper-plane"></i> Submit Application
+                    <span class="btn-text"><i class="fas fa-paper-plane"></i> Submit Application</span>
+                    <span class="btn-loader" style="display: none;"><i class="fas fa-spinner fa-spin"></i> Submitting...</span>
                 </button>
             </div>
         </form>
@@ -1484,7 +969,8 @@
             Next <i class="fas fa-arrow-right"></i>
         </button>
         <button type="button" class="btn btn-submit" id="submit-btn" style="display: none;">
-            <i class="fas fa-paper-plane"></i> Submit Application
+            <span class="btn-text"><i class="fas fa-paper-plane"></i> Submit Application</span>
+            <span class="btn-loader" style="display: none;"><i class="fas fa-spinner fa-spin"></i> Submitting...</span>
         </button>
     `;
             form.appendChild(stepButtons);
@@ -1539,7 +1025,11 @@
             });
 
             // Validate each required field
+            const idType = document.getElementById('IdentificationProof')?.value;
             requiredFields.forEach(field => {
+                // Skip NicNo when Passport is selected; skip PassportNo when NIC is selected
+                if (currentStep === 2 && field.id === 'NicNo' && idType === 'Passport') return;
+                if (currentStep === 2 && field.id === 'PassportNo' && idType === 'NIC') return;
                 if (!validateField(field)) {
                     isValid = false;
                 }
@@ -1547,7 +1037,6 @@
 
             // Special validation for step 2 (Identification)
             if (currentStep === 2) {
-                const idType = document.getElementById('IdentificationProof').value;
                 if (idType === 'NIC') {
                     const nicField = document.getElementById('NicNo');
                     if (nicField.value && !isValidNIC(nicField.value)) {
@@ -1556,15 +1045,39 @@
                     }
                 } else if (idType === 'Passport') {
                     const passportField = document.getElementById('PassportNo');
-                    if (!passportField.value) {
-                        showFieldError(passportField, 'Passport number is required');
+                    if (!passportField || !passportField.value.trim()) {
+                        if (passportField) showFieldError(passportField, 'Passport number is required');
+                        isValid = false;
+                    }
+                    const passportExpField = document.getElementById('PassportExpDate');
+                    if (!passportExpField || !passportExpField.value.trim()) {
+                        if (passportExpField) showFieldError(passportExpField, 'Please enter passport expiry date');
                         isValid = false;
                     }
                 }
             }
 
+            // Step 7 (Documents): validate file size (2MB) and type (JPG/PNG)
+            if (currentStep === totalSteps) {
+                const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+                const ALLOWED_TYPES = ['image/jpeg', 'image/png'];
+                const fileInputs = ['selfie_upload', 'nic_front_upload', 'nic_back_upload', 'passport_upload'];
+                fileInputs.forEach(name => {
+                    const input = document.getElementById(name) || document.querySelector('[name="' + name + '"]');
+                    if (!input || !input.files || !input.files[0]) return;
+                    const file = input.files[0];
+                    if (file.size > MAX_SIZE) {
+                        showFieldError(input, 'File size must be less than 2MB');
+                        isValid = false;
+                    } else if (!ALLOWED_TYPES.includes(file.type)) {
+                        showFieldError(input, 'Only JPG and PNG files are allowed');
+                        isValid = false;
+                    }
+                });
+            }
+
             if (!isValid) {
-                showStatus('Please fill all required fields correctly', 'error');
+                scrollToFirstError(currentStepElement);
             }
 
             return isValid;
@@ -1697,35 +1210,28 @@
 
         // ==================== API DATA LOADING ====================
         function loadDynamicData() {
-            showStatus('Loading data...', 'info');
-
-            // Load all data in parallel
+            // Load silently – only show status on failure
             Promise.all([
-                loadResource('getTitles', 'Title', 'TITLE_CODE', 'TITLE_NAME', true),
-                loadResource('getBrokers', 'BrokerFirm', 'BROKER_ID', 'BROKER_FULL_NAME'),
+                loadResource('getTitles', 'Title', 'TITLE_ID', 'TITLE_NAME', true),
+                loadResource('getBrokers', 'BrokerFirm', 'BROKER_ID', 'BROKER_FULL_NAME', false, true),
                 loadResource('getDistricts', 'ResAddressDistrict', 'DISTRICT_CODE', 'DISTRICT_NAME'),
                 loadResource('getCountries', 'Country', 'COUNTRY_CODE', 'COUNTRY_NAME'),
                 loadResource('getCountries', 'CountryOfResidency', 'COUNTRY_CODE', 'COUNTRY_NAME'),
                 loadResource('getCountries', 'Nationality', 'COUNTRY_CODE', 'COUNTRY_NAME'),
                 loadResource('getBanks', 'BankCode', 'BANK_CODE', 'BANK_NAME'),
                 loadResource('getInvestAdvisors', 'InvestorId', 'INVESTOR_ID', 'INVESTOR_NAME', true)
-            ]).then(() => {
-                showStatus('Data loaded successfully', 'success');
-                setTimeout(() => {
-                    document.getElementById('status-message').style.display = 'none';
-                }, 2000);
-            }).catch(error => {
-                showStatus('Failed to load data: ' + error.message, 'error');
+            ]).catch(error => {
+                showStatus('Failed to load form options: ' + error.message, 'error');
             });
         }
 
-        function loadResource(action, selectId, valueField, displayField, optional) {
+        function loadResource(action, selectId, valueField, displayField, optional, singleAsReadOnly) {
             return new Promise((resolve, reject) => {
                 fetch(`resource.php?action=${action}`)
                     .then(response => response.json())
                     .then(data => {
                         if (data.success && data.data && data.data.length > 0) {
-                            populateDropdown(selectId, data.data, valueField, displayField);
+                            populateDropdown(selectId, data.data, valueField, displayField, singleAsReadOnly);
                         }
                         if (optional) {
                             resolve();
@@ -1742,9 +1248,30 @@
             });
         }
 
-        function populateDropdown(selectId, data, valueField, displayField) {
+        function populateDropdown(selectId, data, valueField, displayField, singleAsReadOnly) {
             const select = document.getElementById(selectId);
             if (!select) return;
+
+            // When single item and singleAsReadOnly: show as read-only text, no dropdown
+            if (singleAsReadOnly && data.length === 1) {
+                const item = data[0];
+                const value = item[valueField];
+                const display = item[displayField] || item[valueField];
+                const parent = select.parentNode;
+                const span = document.createElement('span');
+                span.className = 'broker-readonly';
+                span.textContent = display;
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = select.name;
+                hidden.id = select.id;
+                hidden.value = value;
+                parent.replaceChild(hidden, select);
+                parent.insertBefore(span, hidden);
+                const errMsg = parent.querySelector('.error-message');
+                if (errMsg) errMsg.style.display = 'none';
+                return;
+            }
 
             // Clear existing options except first
             while (select.options.length > 1) {
@@ -1784,24 +1311,26 @@
                 return;
             }
 
-            showStatus('Loading bank branches...', 'info');
+            // Inline loading: show "Loading..." in dropdown while fetching
+            while (branchSelect.options.length > 1) branchSelect.remove(1);
+            const loadingOpt = document.createElement('option');
+            loadingOpt.value = '';
+            loadingOpt.textContent = 'Loading...';
+            loadingOpt.disabled = true;
+            branchSelect.appendChild(loadingOpt);
+            branchSelect.disabled = true;
 
             fetch(`resource.php?action=getBranches&BANK_CODE=${encodeURIComponent(bankCode)}`)
                 .then(response => response.json())
                 .then(data => {
-                    // Support both direct array and wrapped { data: [...] } or { Data: [...] }
                     let branches = data.data;
-                    if (!Array.isArray(branches) && data.data && Array.isArray(data.data.data)) {
-                        branches = data.data.data;
-                    }
-                    if (!Array.isArray(branches) && data.data && Array.isArray(data.data.Data)) {
-                        branches = data.data.Data;
-                    }
+                    if (!Array.isArray(branches) && data.data && Array.isArray(data.data.data)) branches = data.data.data;
+                    if (!Array.isArray(branches) && data.data && Array.isArray(data.data.Data)) branches = data.data.Data;
+
+                    while (branchSelect.options.length > 1) branchSelect.remove(1);
+                    branchSelect.disabled = false;
 
                     if (data.success && Array.isArray(branches) && branches.length > 0) {
-                        while (branchSelect.options.length > 1) {
-                            branchSelect.remove(1);
-                        }
                         branches.forEach(branch => {
                             const option = document.createElement('option');
                             const code = branch.BANK_BRANCH_CODE || branch.BankBranchCode || branch.code || '';
@@ -1810,124 +1339,157 @@
                             option.textContent = name || code || 'Branch';
                             branchSelect.appendChild(option);
                         });
-                        showStatus('Branches loaded', 'success');
-                        setTimeout(() => {
-                            const statusMsg = document.getElementById('status-message');
-                            if (statusMsg) statusMsg.style.display = 'none';
-                        }, 1000);
                     } else {
-                        showStatus('Failed to load branches: ' + (data.message || 'No branches returned'), 'error');
+                        const opt = document.createElement('option');
+                        opt.value = '';
+                        opt.textContent = 'Select Branch';
+                        branchSelect.appendChild(opt);
+                        showStatus('Could not load branches. ' + (data.message || ''), 'error');
                     }
                 })
                 .catch(error => {
+                    while (branchSelect.options.length > 1) branchSelect.remove(1);
+                    const opt = document.createElement('option');
+                    opt.value = '';
+                    opt.textContent = 'Select Branch';
+                    branchSelect.appendChild(opt);
+                    branchSelect.disabled = false;
                     showStatus('Error loading branches: ' + error.message, 'error');
                 });
         }
 
-        // ==================== FORM SUBMISSION ====================
-        function submitForm() {
-            if (!validateCurrentStep()) {
-                showStatus('Please fix errors before submitting', 'error');
-                return;
+        // ==================== FORM SUBMISSION (two-step: form first, then images with AccountID) ====================
+        function setSubmitLoading(loading) {
+            const btn = document.getElementById('submit-btn');
+            if (!btn) return;
+            const text = btn.querySelector('.btn-text');
+            const loader = btn.querySelector('.btn-loader');
+            if (loading) {
+                btn.disabled = true;
+                btn.classList.add('btn-loading');
+                const prevBtn = document.getElementById('prev-btn');
+                if (prevBtn) prevBtn.disabled = true;
+                if (text) text.style.display = 'none';
+                if (loader) loader.style.display = 'inline';
+            } else {
+                isSubmitting = false;
+                btn.disabled = false;
+                btn.classList.remove('btn-loading');
+                const prevBtn = document.getElementById('prev-btn');
+                if (prevBtn) prevBtn.disabled = false;
+                if (text) text.style.display = 'inline';
+                if (loader) loader.style.display = 'none';
             }
+        }
 
-            // Prepare form data
-            const form = document.getElementById('cdsAccountForm');
-            const formData = new FormData();
-
-            // Add all form fields
-            const formElements = form.elements;
-            for (let i = 0; i < formElements.length; i++) {
-                const element = formElements[i];
-                if (element.name && !element.disabled) {
-                    if (element.type === 'file') {
-                        if (element.files && element.files[0]) {
-                            formData.append(element.name, element.files[0]);
-                        }
-                        continue;
-                    } else if (element.type === 'checkbox' || element.type === 'radio') {
-                        if (element.checked) {
-                            formData.append(element.name, element.value);
-                        }
-                    } else if (element.tagName === 'SELECT') {
-                        formData.append(element.name, element.value);
-                    } else {
-                        formData.append(element.name, element.value);
-                    }
+        function buildFormDataObject(form) {
+            const obj = {};
+            const radioDefaults = {
+                'Gender': 'M', 'IsPEP': 'N', 'PEP_Q1': 'N', 'PEP_Q2': 'N', 'PEP_Q3': 'N', 'PEP_Q4': 'N',
+                'LitigationStatus': 'N', 'BankAccountType': 'I', 'ResAddressStatus': 'Y', 'CorrAddressStatus': 'N',
+                'OtherConnBusinessStatus': 'N', 'UsaPersonStatus': 'N', 'FactaDeclaration': 'N', 'DualCitizenship': 'N', 'IsLKPassport': 'N'
+            };
+            const elements = form.elements;
+            for (let i = 0; i < elements.length; i++) {
+                const el = elements[i];
+                if (!el.name || el.disabled) continue;
+                if (el.type === 'file') continue;
+                if (el.type === 'checkbox' || el.type === 'radio') {
+                    if (el.checked) obj[el.name] = el.value;
+                } else if (el.tagName === 'SELECT') {
+                    obj[el.name] = el.value;
+                } else {
+                    obj[el.name] = el.value;
                 }
             }
-            // Unchecked radios are not in FormData – ensure required groups have a value
-            const radioDefaults = {
-                'Gender': 'M',
-                'IsPEP': 'N',
-                'PEP_Q1': 'N', 'PEP_Q2': 'N', 'PEP_Q3': 'N', 'PEP_Q4': 'N',
-                'LitigationStatus': 'N',
-                'BankAccountType': 'I',
-                'ResAddressStatus': 'Y',
-                'CorrAddressStatus': 'N',
-                'OtherConnBusinessStatus': 'N',
-                'UsaPersonStatus': 'N',
-                'FactaDeclaration': 'N',
-                'DualCitizenship': 'N',
-                'IsLKPassport': 'N'
-            };
             for (const name of Object.keys(radioDefaults)) {
-                if (!formData.has(name)) formData.append(name, radioDefaults[name]);
+                if (!(name in obj)) obj[name] = radioDefaults[name];
             }
+            if (!obj.ClientType) obj.ClientType = 'FI';
+            if (!obj.Residency) obj.Residency = 'R';
+            if (!obj.Status) obj.Status = '1';
+            if (!obj.EnterUser) obj.EnterUser = 'SYSTEM';
+            if (!obj.ApiUser) obj.ApiUser = 'DIALOG';
+            const userId = (obj.Email && obj.Email.trim()) || obj.UserID;
+            obj.UserID = (userId && userId.trim()) ? userId : generateUserId();
+            if (!obj.EnterDate || !obj.EnterDate.trim()) obj.EnterDate = new Date().toISOString().split('T')[0];
+            obj.ApiRefNo = ('REF' + Date.now()).slice(0, 15);
+            return obj;
+        }
 
-            // Ensure system/hidden fields are always present (in case they were not in form.elements)
-            if (!formData.has('ClientType')) formData.append('ClientType', 'FI');
-            if (!formData.has('Residency')) formData.append('Residency', 'R');
-            if (!formData.has('Status')) formData.append('Status', '1');
-            if (!formData.has('EnterUser')) formData.append('EnterUser', 'SYSTEM');
-            if (!formData.has('ApiUser')) formData.append('ApiUser', 'DIALOG');
+        let isSubmitting = false;
+        function submitForm() {
+            if (isSubmitting) return;
+            if (!validateCurrentStep()) return;
+            isSubmitting = true;
 
-            // Add hidden fields (UserID = Email when available, else generated)
-            const userId = (formData.get('Email') && formData.get('Email').toString().trim()) || formData.get('UserID');
-            formData.set('UserID', (userId && userId.toString().trim()) ? userId : generateUserId());
-            if (!formData.get('EnterDate') || !formData.get('EnterDate').toString().trim()) {
-                formData.set('EnterDate', new Date().toISOString().split('T')[0]);
-            }
-            // API_REF_NO max 15 chars (Oracle column limit)
-            formData.set('ApiRefNo', ('REF' + Date.now()).slice(0, 15));
+            const form = document.getElementById('cdsAccountForm');
+            const formDataObj = buildFormDataObject(form);
 
-            // Show loading
-            showStatus('Submitting application...', 'info');
-            document.getElementById('submit-btn').disabled = true;
-            document.getElementById('prev-btn').disabled = true;
+            setSubmitLoading(true);
+            showStatus('Creating account...', 'info');
 
-            // Submit to api.php
+            // Step 1: Submit form data only (no files) – get AccountID
             fetch('api.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ formData: formDataObj, step: 'submit' })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) {
+                    showStatus('Error: ' + data.message, 'error');
+                    showApiErrorsBelowFields(data.message);
+                    setSubmitLoading(false);
+                    return Promise.resolve();
+                }
+                const accountId = data.accountId;
+                showStatus('Account created. Uploading documents...', 'info');
+
+                // Step 2: Upload images with AccountID (after account exists)
+                const uploadFormData = new FormData();
+                uploadFormData.append('step', 'upload');
+                uploadFormData.append('accountId', accountId);
+                uploadFormData.append('UserID', formDataObj.UserID);
+                uploadFormData.append('Email', formDataObj.Email || '');
+                const fileInputs = ['selfie_upload', 'nic_front_upload', 'nic_back_upload', 'passport_upload'];
+                let hasFiles = false;
+                for (const name of fileInputs) {
+                    const input = form.querySelector(`[name="${name}"]`);
+                    if (input && input.files && input.files[0]) {
+                        uploadFormData.append(name, input.files[0]);
+                        hasFiles = true;
+                    }
+                }
+
+                if (!hasFiles) {
+                    showStatus(
+                        `Application submitted successfully!<br>Account ID: ${accountId}<br>Source Funds: ${data.sourceFundsSaved ? 'Saved' : 'Failed'}`,
+                        'success'
+                    );
+                    setSubmitLoading(false);
+                    setTimeout(() => { resetForm(); goToStep(1); }, 5000);
+                    return Promise.resolve();
+                }
+
+                return fetch('api.php', { method: 'POST', body: uploadFormData })
+                    .then(r => r.json())
+                    .then(uploadData => {
                         showStatus(
                             `Application submitted successfully!<br>
-                Account ID: ${data.accountId}<br>
-                Source Funds: ${data.sourceFundsSaved ? 'Saved' : 'Failed'}<br>
-                Images: ${data.imagesUploaded ? 'Uploaded' : 'Failed'}`,
+                            Account ID: ${accountId}<br>
+                            Source Funds: ${data.sourceFundsSaved ? 'Saved' : 'Failed'}<br>
+                            Images: ${uploadData.imagesUploaded ? 'Uploaded' : 'Failed'}`,
                             'success'
                         );
-
-                        // Reset form after delay
-                        setTimeout(() => {
-                            resetForm();
-                            goToStep(1);
-                        }, 5000);
-                    } else {
-                        showStatus('Error: ' + data.message, 'error');
-                    }
-                    document.getElementById('submit-btn').disabled = false;
-                    document.getElementById('prev-btn').disabled = false;
-                })
-                .catch(error => {
-                    showStatus('Network error: ' + error.message, 'error');
-                    document.getElementById('submit-btn').disabled = false;
-                    document.getElementById('prev-btn').disabled = false;
-                });
+                        setSubmitLoading(false);
+                        setTimeout(() => { resetForm(); goToStep(1); }, 5000);
+                    });
+            })
+            .catch(error => {
+                showStatus('Network error: ' + error.message, 'error');
+                setSubmitLoading(false);
+            });
         }
 
         // ==================== HELPER FUNCTIONS ====================
@@ -1971,6 +1533,16 @@
                     clearFieldError(event.target);
                 }
             });
+
+            // Image file validation (2MB limit, JPG/PNG only) + preview
+            const form = document.getElementById('cdsAccountForm');
+            if (form) {
+                form.addEventListener('change', function(e) {
+                    if (e.target && e.target.type === 'file' && ['selfie_upload', 'nic_front_upload', 'nic_back_upload', 'passport_upload'].includes(e.target.id)) {
+                        previewImage(e.target, 'preview-' + e.target.id);
+                    }
+                });
+            }
         }
 
         function validateField(field) {
@@ -2001,12 +1573,12 @@
                 isValid = false;
             }
 
-            // Validate date (not in future)
-            if (field.type === 'date' && field.value) {
+            // Validate date (not in future) - only for Date of Birth; Passport Expiry should be in future
+            if (field.type === 'date' && field.id === 'DateOfBirthday' && field.value) {
                 const inputDate = new Date(field.value);
                 const today = new Date();
                 if (inputDate > today) {
-                    errorMessage = 'Date cannot be in the future';
+                    errorMessage = 'Date of birth cannot be in the future';
                     isValid = false;
                 }
             }
@@ -2061,6 +1633,52 @@
                     errorElement.style.display = 'none';
                 }
             });
+        }
+
+        function scrollToFirstError(stepElement) {
+            if (!stepElement) return;
+            const firstError = stepElement.querySelector('.form-group.field-error');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const input = firstError.querySelector('input, select, textarea');
+                if (input) {
+                    input.focus();
+                }
+            }
+        }
+
+        /** Parse API "Required fields missing..." error and show below each field */
+        function showApiErrorsBelowFields(message) {
+            const match = message && message.match(/Required fields missing \(doc Null\? Y\):\s*(.+)/i);
+            if (!match) return;
+
+            clearAllErrors();
+            const fieldNames = match[1].split(',').map(s => s.trim()).filter(Boolean);
+            let firstErrorGroup = null;
+
+            fieldNames.forEach(fieldName => {
+                const field = document.querySelector(`[name="${fieldName}"]`);
+                if (field) {
+                    showFieldError(field, 'This field is required');
+                    if (!firstErrorGroup) {
+                        firstErrorGroup = field.closest('.form-group');
+                    }
+                }
+            });
+
+            if (firstErrorGroup) {
+                const stepEl = firstErrorGroup.closest('.form-step');
+                if (stepEl) {
+                    const stepNum = parseInt(stepEl.id.replace('step-', ''), 10);
+                    if (!isNaN(stepNum)) {
+                        currentStep = stepNum;
+                        showStep(stepNum);
+                    }
+                }
+                firstErrorGroup.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const input = firstErrorGroup.querySelector('input, select, textarea');
+                if (input) input.focus();
+            }
         }
 
         function isValidEmail(email) {
@@ -2281,12 +1899,6 @@
 
             setupConditionalFields();
             setupDateDefaults();
-
-            showStatus('Form has been reset', 'info');
-            setTimeout(() => {
-                const statusMsg = document.getElementById('status-message');
-                if (statusMsg) statusMsg.style.display = 'none';
-            }, 3000);
         }
 
         // ==================== EVENT LISTENERS ====================
