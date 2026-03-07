@@ -1,3 +1,6 @@
+# Composer
+vendor/
+
 # Environment (contains secrets)
 .env
 
@@ -6,3 +9,4 @@
 storage/
 live_api_log.txt
 api.log
+.cursor

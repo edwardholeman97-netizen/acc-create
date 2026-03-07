@@ -1,0 +1,11 @@
+{
+    "name": "acc-create/cds-accounts",
+    "description": "CDS Account Creation",
+    "require": {
+        "php": ">=7.4",
+        "phpmailer/phpmailer": "^6.8"
+    },
+    "autoload": {
+        "classmap": []
+    }
+}

@@ -104,6 +104,13 @@ try {
     liveLog('Step 5: Saving submission to DB');
     saveSubmissionToDB((string)$accountId, $formData, []);
 
+    try {
+        require_once __DIR__ . '/lib/email.php';
+        sendAccountCreationEmail($formData, (string)$accountId);
+    } catch (Throwable $e) {
+        liveLog('Account creation email failed: ' . $e->getMessage(), 'error');
+    }
+
     $response['success'] = true;
     $response['message'] = 'Account created.';
     $response['accountId'] = $accountId;

@@ -54,3 +54,10 @@ define('CSE_STORAGE_PATH', $storageDir);
 define('CSE_TOKEN_CACHE_FILE', CSE_STORAGE_PATH . '/.token_cache.json');
 define('CSE_TOKEN_VALID_SECONDS', (int) env('CSE_TOKEN_VALID_SECONDS', '840')); // 14 min
 define('CSE_LOG_FILE', CSE_STORAGE_PATH . '/api.log');
+
+// ----- SMTP (account creation & admin update emails) -----
+define('SMTP_HOST', env('SMTP_HOST', ''));
+define('SMTP_USERNAME', env('SMTP_USERNAME', ''));
+define('SMTP_PASSWORD', env('SMTP_PASSWORD', ''));
+define('SMTP_PORT', (int) env('SMTP_PORT', '465'));
+define('SMTP_ENCRYPTION', env('SMTP_ENCRYPTION', 'ssl'));

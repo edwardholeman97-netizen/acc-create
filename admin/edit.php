@@ -194,6 +194,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $stmt = $pdo->prepare('UPDATE cds_submissions SET form_data = ?, image_paths = ?, updated_at = NOW() WHERE id = ?');
     $stmt->execute([json_encode($updated, JSON_UNESCAPED_UNICODE), json_encode($imagePaths, JSON_UNESCAPED_UNICODE), $id]);
+
+    try {
+        require_once dirname(__DIR__) . '/lib/email.php';
+        sendAccountUpdateEmail($updated, $row['account_id']);
+    } catch (Throwable $e) {
+        // Log but do not block redirect
+        if (function_exists('email_log')) {
+            email_log('Account update email failed: ' . $e->getMessage(), 'error');
+        }
+    }
+
     header('Location: dashboard.php?msg=' . urlencode('Record resubmitted to CSE and updated.'));
     exit;
 }
