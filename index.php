@@ -359,7 +359,7 @@
                                 <label for="CorrAddressStatus">Correspondence Address Same as Residential?</label>
                                 <div class="radio-group">
                                     <div class="radio-option">
-                                        <input type="radio" id="corr_addr_y" name="CorrAddressStatus" value="Y">
+                                        <input type="radio" id="corr_addr_y" name="CorrAddressStatus" value="Y" checked>
                                         <label for="corr_addr_y">Yes</label>
                                     </div>
                                     <div class="radio-option">
@@ -369,7 +369,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="form-row">
+                        <div id="corr-address-fields" class="form-row" style="display: none;">
                             <div class="form-group">
                                 <label for="CorrAddressLine01">Corr Address Line 1</label>
                                 <input type="text" id="CorrAddressLine01" name="CorrAddressLine01" maxlength="30">
@@ -379,7 +379,7 @@
                                 <input type="text" id="CorrAddressLine02" name="CorrAddressLine02" maxlength="30">
                             </div>
                         </div>
-                        <div class="form-row">
+                        <div id="corr-address-fields-row2" class="form-row" style="display: none;">
                             <div class="form-group">
                                 <label for="CorrAddressLine03">Corr Address Line 3</label>
                                 <input type="text" id="CorrAddressLine03" name="CorrAddressLine03" maxlength="15">
@@ -702,11 +702,13 @@
                                         <label for="usa_person_y">Yes</label>
                                     </div>
                                     <div class="radio-option">
-                                        <input type="radio" id="usa_person_n" name="UsaPersonStatus" value="N">
+                                        <input type="radio" id="usa_person_n" name="UsaPersonStatus" value="N" checked>
                                         <label for="usa_person_n">No</label>
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                        <div id="usa-person-fields" class="form-row" style="display: none;">
                             <div class="form-group">
                                 <label for="UsaTaxIdentificationNo">USA Tax Identification No</label>
                                 <input type="text" id="UsaTaxIdentificationNo" name="UsaTaxIdentificationNo" maxlength="50">
@@ -734,11 +736,13 @@
                                         <label for="dual_cit_y">Yes</label>
                                     </div>
                                     <div class="radio-option">
-                                        <input type="radio" id="dual_cit_n" name="DualCitizenship" value="N">
+                                        <input type="radio" id="dual_cit_n" name="DualCitizenship" value="N" checked>
                                         <label for="dual_cit_n">No</label>
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                        <div id="dual-citizen-fields" class="form-row" style="display: none;">
                             <div class="form-group">
                                 <label for="DualCitizenCountry">Dual Citizen Country</label>
                                 <input type="text" id="DualCitizenCountry" name="DualCitizenCountry" maxlength="10">
@@ -1386,7 +1390,7 @@
             const obj = {};
             const radioDefaults = {
                 'Gender': 'M', 'IsPEP': 'N', 'PEP_Q1': 'N', 'PEP_Q2': 'N', 'PEP_Q3': 'N', 'PEP_Q4': 'N',
-                'LitigationStatus': 'N', 'BankAccountType': 'I', 'ResAddressStatus': 'Y', 'CorrAddressStatus': 'N',
+                'LitigationStatus': 'N', 'BankAccountType': 'I', 'ResAddressStatus': 'Y', 'CorrAddressStatus': 'Y',
                 'OtherConnBusinessStatus': 'N', 'UsaPersonStatus': 'N', 'FactaDeclaration': 'N', 'DualCitizenship': 'N', 'IsLKPassport': 'N'
             };
             const elements = form.elements;
@@ -1722,6 +1726,9 @@
             toggleEmploymentFields();
             togglePEPQuestions();
             toggleLitigationDetails();
+            toggleCorrAddressFields();
+            toggleUsaPersonFields();
+            toggleDualCitizenFields();
 
             // Add event listeners
             document.getElementById('IdentificationProof')?.addEventListener('change', toggleIdentificationFields);
@@ -1735,6 +1742,21 @@
             // Litigation radio buttons
             document.querySelectorAll('input[name="LitigationStatus"]').forEach(radio => {
                 radio.addEventListener('change', toggleLitigationDetails);
+            });
+
+            // Correspondence address same as residential?
+            document.querySelectorAll('input[name="CorrAddressStatus"]').forEach(radio => {
+                radio.addEventListener('change', toggleCorrAddressFields);
+            });
+
+            // USA Person Status
+            document.querySelectorAll('input[name="UsaPersonStatus"]').forEach(radio => {
+                radio.addEventListener('change', toggleUsaPersonFields);
+            });
+
+            // Dual Citizenship
+            document.querySelectorAll('input[name="DualCitizenship"]').forEach(radio => {
+                radio.addEventListener('change', toggleDualCitizenFields);
             });
 
             // Existing CDS account radio buttons
@@ -1805,6 +1827,51 @@
                 } else {
                     litigationDetails.classList.remove('active');
                 }
+            }
+        }
+
+        function toggleCorrAddressFields() {
+            const corrSame = document.querySelector('input[name="CorrAddressStatus"]:checked');
+            const fields1 = document.getElementById('corr-address-fields');
+            const fields2 = document.getElementById('corr-address-fields-row2');
+            const inputs = ['CorrAddressLine01', 'CorrAddressLine02', 'CorrAddressLine03', 'CorrAddressTown', 'CorrAddressDistrict'];
+
+            const show = corrSame && corrSame.value === 'N';
+            if (fields1) fields1.style.display = show ? 'flex' : 'none';
+            if (fields2) fields2.style.display = show ? 'flex' : 'none';
+            if (!show) {
+                inputs.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = '';
+                });
+            }
+        }
+
+        function toggleUsaPersonFields() {
+            const usaPerson = document.querySelector('input[name="UsaPersonStatus"]:checked');
+            const fields = document.getElementById('usa-person-fields');
+
+            const show = usaPerson && usaPerson.value === 'Y';
+            if (fields) fields.style.display = show ? 'flex' : 'none';
+            if (!show) {
+                const el = document.getElementById('UsaTaxIdentificationNo');
+                if (el) el.value = '';
+                const factaN = document.querySelector('input[name="FactaDeclaration"][value="N"]');
+                if (factaN) factaN.checked = true;
+            }
+        }
+
+        function toggleDualCitizenFields() {
+            const dualCit = document.querySelector('input[name="DualCitizenship"]:checked');
+            const fields = document.getElementById('dual-citizen-fields');
+
+            const show = dualCit && dualCit.value === 'Y';
+            if (fields) fields.style.display = show ? 'flex' : 'none';
+            if (!show) {
+                ['DualCitizenCountry', 'DualCitizenPassport'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.value = '';
+                });
             }
         }
 
