@@ -207,12 +207,9 @@ function createPhpMailer() {
     return $mail;
 }
 
-function buildAccountCreationBody(array $formData, string $accountId) {
+function buildFormDataTableRows(array $formData): string {
     $labels = get_email_field_labels();
-    $options = $labels['_options'] ?? [];
     unset($labels['_options']);
-
-    $submissionDate = date('F j, Y \a\t g:i A');
     $rows = '';
     foreach ($formData as $key => $value) {
         if (in_array($key, EMAIL_EXCLUDE_KEYS, true)) continue;
@@ -231,7 +228,12 @@ function buildAccountCreationBody(array $formData, string $accountId) {
 			<td style="padding: 12px 15px; border: 1px solid #E7E7E7; color: #000000;">' . $displayVal . '</td>
 		</tr>';
     }
+    return $rows;
+}
 
+function buildAccountCreationBody(array $formData, string $accountId) {
+    $submissionDate = date('F j, Y \a\t g:i A');
+    $rows = buildFormDataTableRows($formData);
     $header = getEmailHeader();
     $footer = getEmailFooter();
     $body = $header . '
@@ -254,6 +256,7 @@ function buildAccountCreationBody(array $formData, string $accountId) {
 }
 
 function buildAccountUpdateBody(array $formData, string $accountId) {
+    $rows = buildFormDataTableRows($formData);
     $header = getEmailHeader();
     $footer = getEmailFooter();
     $body = $header . '
@@ -263,6 +266,14 @@ function buildAccountUpdateBody(array $formData, string $accountId) {
 			<p style="color: #3D3D3D; font-size: 14px; margin-bottom: 30px;">
 				Your CDS account (Account ID: ' . htmlspecialchars($accountId) . ') has been updated by our team.
 			</p>
+			<table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+				<tr style="background-color: #F9F9F9;">
+					<td colspan="2" style="padding: 15px; color: #000000; font-weight: bold; border: 1px solid #E7E7E7;">
+						Your Updated Details
+					</td>
+				</tr>
+				' . $rows . '
+			</table>
 			<p style="color: #3D3D3D; font-size: 14px;">
 				If you have any questions, please contact us.
 			</p>
