@@ -195,13 +195,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $pdo->prepare('UPDATE cds_submissions SET form_data = ?, image_paths = ?, updated_at = NOW() WHERE id = ?');
     $stmt->execute([json_encode($updated, JSON_UNESCAPED_UNICODE), json_encode($imagePaths, JSON_UNESCAPED_UNICODE), $id]);
 
+    require_once dirname(__DIR__) . '/lib/email.php';
     try {
-        require_once dirname(__DIR__) . '/lib/email.php';
-        sendAccountUpdateEmail($updated, $row['account_id']);
+        sendAccountUpdateEmail($updated, $row['account_id'], $formData);
     } catch (Throwable $e) {
-        // Log but do not block redirect
         if (function_exists('email_log')) {
             email_log('Account update email failed: ' . $e->getMessage(), 'error');
+        }
+    }
+    try {
+        sendAdminAccountUpdateNotifyEmail(
+            $updated,
+            $row['account_id'],
+            $formData,
+            $_SESSION['admin_email'] ?? null
+        );
+    } catch (Throwable $e) {
+        if (function_exists('email_log')) {
+            email_log('Admin notify email failed: ' . $e->getMessage(), 'error');
         }
     }
 

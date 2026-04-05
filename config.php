@@ -36,6 +36,28 @@ define('CSE_API_PASSWORD', env('CSE_API_PASSWORD', ''));
 define('APP_ENV', env('APP_ENV', 'production')); // production | staging | local
 define('APP_DEBUG', env('APP_DEBUG', '0') === '1' || env('APP_DEBUG', '0') === 'true');
 
+// Public site URL (no trailing slash) — used for admin password reset links; if empty, derived from request Host
+define('APP_BASE_URL', rtrim((string) env('APP_BASE_URL', ''), '/'));
+
+/** Seconds until admin password reset token expires */
+define('ADMIN_PASSWORD_RESET_EXPIRY_SECONDS', 3600);
+
+/**
+ * Base URL for links emailed to users (e.g. admin password reset).
+ */
+function app_public_base_url(): string {
+    if (APP_BASE_URL !== '') {
+        return APP_BASE_URL;
+    }
+    if (php_sapi_name() !== 'cli' && !empty($_SERVER['HTTP_HOST'])) {
+        $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+        $scheme = $https ? 'https' : 'http';
+        return $scheme . '://' . $_SERVER['HTTP_HOST'];
+    }
+    return '';
+}
+
 // ----- CORS (production: set to your frontend origin, e.g. https://cds.yourdomain.com) -----
 define('CORS_ALLOW_ORIGIN', env('CORS_ALLOW_ORIGIN', '*'));
 
@@ -61,3 +83,11 @@ define('SMTP_USERNAME', env('SMTP_USERNAME', ''));
 define('SMTP_PASSWORD', env('SMTP_PASSWORD', ''));
 define('SMTP_PORT', (int) env('SMTP_PORT', '465'));
 define('SMTP_ENCRYPTION', env('SMTP_ENCRYPTION', 'ssl'));
+
+// Comma-separated list of addresses to notify when an admin successfully updates a user submission (optional)
+define('ADMIN_NOTIFY_EMAIL', env('ADMIN_NOTIFY_EMAIL', ''));
+
+// ----- hCaptcha (admin login) -----
+// Create keys at https://www.hcaptcha.com/ — add your host (e.g. sampath.companysite.site) under Sites.
+define('HCAPTCHA_SITE_KEY', env('HCAPTCHA_SITE_KEY', ''));
+define('HCAPTCHA_SECRET_KEY', env('HCAPTCHA_SECRET_KEY', ''));

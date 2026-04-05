@@ -833,6 +833,17 @@
     </div>
 </div>
 
+<div id="submission-progress-modal" class="submission-progress-overlay" role="dialog" aria-modal="true" aria-labelledby="submission-progress-title" aria-busy="false" aria-hidden="true">
+    <div class="submission-progress-dialog">
+        <div class="submission-progress-spinner" aria-hidden="true">
+            <i class="fas fa-spinner fa-spin"></i>
+        </div>
+        <h2 id="submission-progress-title" class="submission-progress-title" tabindex="-1">Account creation in progress</h2>
+        <p class="submission-progress-warning">Please do not close or refresh this tab until the process finishes.</p>
+        <p id="submission-progress-status" class="submission-progress-status">Creating your account…</p>
+    </div>
+</div>
+
 
 
 
@@ -1361,6 +1372,33 @@
         }
 
         // ==================== FORM SUBMISSION (two-step: form first, then images with AccountID) ====================
+        function openSubmissionProgressModal(statusText) {
+            const el = document.getElementById('submission-progress-modal');
+            const statusEl = document.getElementById('submission-progress-status');
+            const titleEl = document.getElementById('submission-progress-title');
+            if (statusEl && statusText) statusEl.textContent = statusText;
+            if (el) {
+                el.classList.add('is-open');
+                el.setAttribute('aria-hidden', 'false');
+                el.setAttribute('aria-busy', 'true');
+            }
+            if (titleEl) titleEl.focus({ preventScroll: true });
+        }
+
+        function setSubmissionProgressStatus(text) {
+            const statusEl = document.getElementById('submission-progress-status');
+            if (statusEl && text) statusEl.textContent = text;
+        }
+
+        function closeSubmissionProgressModal() {
+            const el = document.getElementById('submission-progress-modal');
+            if (el) {
+                el.classList.remove('is-open');
+                el.setAttribute('aria-hidden', 'true');
+                el.setAttribute('aria-busy', 'false');
+            }
+        }
+
         function setSubmitLoading(loading) {
             const btn = document.getElementById('submit-btn');
             if (!btn) return;
@@ -1429,6 +1467,7 @@
             const formDataObj = buildFormDataObject(form);
 
             setSubmitLoading(true);
+            openSubmissionProgressModal('Creating your account…');
             showStatus('Creating account...', 'info');
 
             // Step 1: Submit form data only (no files) – get AccountID
@@ -1442,6 +1481,7 @@
                 if (!data.success) {
                     showStatus('Error: ' + data.message, 'error');
                     showApiErrorsBelowFields(data.message);
+                    closeSubmissionProgressModal();
                     setSubmitLoading(false);
                     return Promise.resolve();
                 }
@@ -1465,15 +1505,18 @@
                 }
 
                 if (!hasFiles) {
+                    setSubmissionProgressStatus('Finishing up…');
                     showStatus(
                         `Application submitted successfully!<br>Account ID: ${accountId}<br>Source Funds: ${data.sourceFundsSaved ? 'Saved' : 'Failed'}`,
                         'success'
                     );
+                    closeSubmissionProgressModal();
                     setSubmitLoading(false);
                     setTimeout(() => { resetForm(); goToStep(1); }, 5000);
                     return Promise.resolve();
                 }
 
+                setSubmissionProgressStatus('Uploading documents…');
                 return fetch('api.php', { method: 'POST', body: uploadFormData })
                     .then(r => r.json())
                     .then(uploadData => {
@@ -1484,12 +1527,14 @@
                             Images: ${uploadData.imagesUploaded ? 'Uploaded' : 'Failed'}`,
                             'success'
                         );
+                        closeSubmissionProgressModal();
                         setSubmitLoading(false);
                         setTimeout(() => { resetForm(); goToStep(1); }, 5000);
                     });
             })
             .catch(error => {
                 showStatus('Network error: ' + error.message, 'error');
+                closeSubmissionProgressModal();
                 setSubmitLoading(false);
             });
         }

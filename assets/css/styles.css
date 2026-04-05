@@ -945,3 +945,57 @@ textarea:focus {
         flex: 1 1 100%;
     }
 }
+
+/* Submission progress modal (CDS account creation) */
+.submission-progress-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+.submission-progress-overlay.is-open {
+    display: flex;
+}
+
+.submission-progress-dialog {
+    width: 100%;
+    max-width: 420px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 32px 28px;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.25);
+    text-align: center;
+}
+
+.submission-progress-spinner {
+    font-size: 40px;
+    color: #ff8800;
+    margin-bottom: 20px;
+}
+
+.submission-progress-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0 0 12px 0;
+    line-height: 1.3;
+}
+
+.submission-progress-warning {
+    font-size: 15px;
+    color: #5a6c7d;
+    line-height: 1.5;
+    margin: 0 0 16px 0;
+}
+
+.submission-progress-status {
+    font-size: 14px;
+    font-weight: 600;
+    color: #dd4200;
+    margin: 0;
+}

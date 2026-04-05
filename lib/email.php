@@ -207,16 +207,74 @@ function createPhpMailer() {
     return $mail;
 }
 
+/**
+ * Send admin password reset link (HTML).
+ */
+function sendAdminPasswordResetEmail(string $toEmail, string $resetUrl): bool {
+    if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+        email_log('Password reset email skipped: invalid recipient', 'warn');
+        return false;
+    }
+    if (!SMTP_HOST || !SMTP_USERNAME || !SMTP_PASSWORD) {
+        email_log('Password reset email skipped: SMTP not configured', 'warn');
+        return false;
+    }
+    $expiryMins = defined('ADMIN_PASSWORD_RESET_EXPIRY_SECONDS') ? (int) (ADMIN_PASSWORD_RESET_EXPIRY_SECONDS / 60) : 60;
+    $safeUrl = htmlspecialchars($resetUrl, ENT_QUOTES, 'UTF-8');
+    $header = getEmailHeader();
+    $footer = getEmailFooter();
+    $body = $header . '
+			<h1 style="color: #FF8800; font-size: 24px; margin-bottom: 5px; border-bottom: 2px solid #E7E7E7; padding-bottom: 10px;">
+				Reset your CDS admin password
+			</h1>
+			<p style="color: #3D3D3D; font-size: 14px; margin-bottom: 20px;">
+				We received a request to reset the password for this email address. Click the button below to choose a new password.
+			</p>
+			<div style="text-align: center; margin: 28px 0;">
+				<a href="' . $safeUrl . '" style="display: inline-block; background-color: #DD4200; padding: 14px 24px; border-radius: 8px; color: #FFFFFF; text-decoration: none; font-weight: 600;">Reset password</a>
+			</div>
+			<p style="color: #8E8E93; font-size: 13px; margin-bottom: 16px;">
+				This link expires in about ' . (int) $expiryMins . ' minutes. If you did not request a reset, you can ignore this email.
+			</p>
+			<p style="color: #8E8E93; font-size: 12px; word-break: break-all;">
+				If the button does not work, copy and paste this URL into your browser:<br>
+				<a href="' . $safeUrl . '" style="color: #FF8800;">' . $safeUrl . '</a>
+			</p>
+			' . $footer;
+    try {
+        $mail = createPhpMailer();
+        $mail->addAddress($toEmail);
+        $mail->Subject = 'CDS Admin — password reset';
+        $mail->Body = $body;
+        $mail->send();
+        email_log('Password reset email sent to ' . $toEmail);
+        return true;
+    } catch (PHPMailerException $e) {
+        email_log('Password reset email failed: ' . $e->getMessage(), 'error');
+        return false;
+    }
+}
+
+function email_table_key_excluded(string $key): bool {
+    if (in_array($key, EMAIL_EXCLUDE_KEYS, true)) return true;
+    foreach (EMAIL_EXCLUDE_PATTERNS as $pat) {
+        if (stripos($key, $pat) !== false) return true;
+    }
+    return false;
+}
+
+function email_field_excluded_from_table(string $key, $value): bool {
+    if (email_table_key_excluded($key)) return true;
+    if (is_array($value)) return true;
+    return false;
+}
+
 function buildFormDataTableRows(array $formData): string {
     $labels = get_email_field_labels();
     unset($labels['_options']);
     $rows = '';
     foreach ($formData as $key => $value) {
-        if (in_array($key, EMAIL_EXCLUDE_KEYS, true)) continue;
-        foreach (EMAIL_EXCLUDE_PATTERNS as $pat) {
-            if (stripos($key, $pat) !== false) continue 2;
-        }
-        if (is_array($value)) continue;
+        if (email_field_excluded_from_table($key, $value)) continue;
         $label = $labels[$key] ?? preg_replace('/([a-z])([A-Z])/', '$1 $2', $key);
         $displayVal = get_email_display_value($key, $value);
         $displayVal = htmlspecialchars($displayVal ?: '-');
@@ -226,6 +284,51 @@ function buildFormDataTableRows(array $formData): string {
         $rows .= '<tr>
 			<td style="padding: 12px 15px; border: 1px solid #E7E7E7; font-weight: bold; width: 35%; color: #3D3D3D;">' . htmlspecialchars($label) . '</td>
 			<td style="padding: 12px 15px; border: 1px solid #E7E7E7; color: #000000;">' . $displayVal . '</td>
+		</tr>';
+    }
+    return $rows;
+}
+
+/**
+ * HTML table rows (3 columns: Field, Previous, New) for scalar fields that changed between $before and $after.
+ */
+function buildFormDataDiffTableRows(array $before, array $after): string {
+    $labels = get_email_field_labels();
+    unset($labels['_options']);
+    $keys = array_unique(array_merge(array_keys($after), array_keys($before)));
+    sort($keys);
+    $rows = '';
+    foreach ($keys as $key) {
+        if (email_table_key_excluded($key)) {
+            continue;
+        }
+        $oldRaw = $before[$key] ?? '';
+        $newRaw = $after[$key] ?? '';
+        if (is_array($oldRaw) || is_array($newRaw)) {
+            continue;
+        }
+        $oldNorm = trim((string)$oldRaw);
+        $newNorm = trim((string)$newRaw);
+        if ($oldNorm === $newNorm) {
+            continue;
+        }
+        $label = $labels[$key] ?? preg_replace('/([a-z])([A-Z])/', '$1 $2', $key);
+        $prevDisp = get_email_display_value($key, $oldRaw);
+        $newDisp = get_email_display_value($key, $newRaw);
+        $prevHtml = htmlspecialchars($prevDisp !== '' ? $prevDisp : '—');
+        $newHtml = htmlspecialchars($newDisp !== '' ? $newDisp : '—');
+        if ($key === 'Email') {
+            if ($oldNorm !== '') {
+                $prevHtml = '<a href="mailto:' . htmlspecialchars($oldRaw) . '" style="color: #DD4200; text-decoration: none;">' . $prevHtml . '</a>';
+            }
+            if ($newNorm !== '') {
+                $newHtml = '<a href="mailto:' . htmlspecialchars($newRaw) . '" style="color: #DD4200; text-decoration: none;">' . $newHtml . '</a>';
+            }
+        }
+        $rows .= '<tr>
+			<td style="padding: 12px 15px; border: 1px solid #E7E7E7; font-weight: bold; width: 28%; color: #3D3D3D;">' . htmlspecialchars($label) . '</td>
+			<td style="padding: 12px 15px; border: 1px solid #E7E7E7; color: #666666;">' . $prevHtml . '</td>
+			<td style="padding: 12px 15px; border: 1px solid #E7E7E7; color: #000000;">' . $newHtml . '</td>
 		</tr>';
     }
     return $rows;
@@ -255,10 +358,41 @@ function buildAccountCreationBody(array $formData, string $accountId) {
     return $body;
 }
 
-function buildAccountUpdateBody(array $formData, string $accountId) {
+function buildAccountUpdateTableBlock(array $formData, ?array $previousFormData): string {
+    if ($previousFormData !== null) {
+        $diffRows = buildFormDataDiffTableRows($previousFormData, $formData);
+        if ($diffRows === '') {
+            return '<p style="color: #3D3D3D; font-size: 14px; margin-bottom: 24px;">No form field values were changed in this update (for example, only documents may have been updated).</p>';
+        }
+        return '<table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+				<tr style="background-color: #F9F9F9;">
+					<td colspan="3" style="padding: 15px; color: #000000; font-weight: bold; border: 1px solid #E7E7E7;">
+						Details that changed
+					</td>
+				</tr>
+				<tr style="background-color: #F9F9F9;">
+					<td style="padding: 10px 15px; border: 1px solid #E7E7E7; font-weight: bold; font-size: 12px; color: #3D3D3D;">Field</td>
+					<td style="padding: 10px 15px; border: 1px solid #E7E7E7; font-weight: bold; font-size: 12px; color: #3D3D3D;">Previous</td>
+					<td style="padding: 10px 15px; border: 1px solid #E7E7E7; font-weight: bold; font-size: 12px; color: #3D3D3D;">New</td>
+				</tr>
+				' . $diffRows . '
+			</table>';
+    }
     $rows = buildFormDataTableRows($formData);
+    return '<table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+				<tr style="background-color: #F9F9F9;">
+					<td colspan="2" style="padding: 15px; color: #000000; font-weight: bold; border: 1px solid #E7E7E7;">
+						Your Updated Details
+					</td>
+				</tr>
+				' . $rows . '
+			</table>';
+}
+
+function buildAccountUpdateBody(array $formData, string $accountId, ?array $previousFormData = null) {
     $header = getEmailHeader();
     $footer = getEmailFooter();
+    $tableBlock = buildAccountUpdateTableBlock($formData, $previousFormData);
     $body = $header . '
 			<h1 style="color: #FF8800; font-size: 24px; margin-bottom: 5px; border-bottom: 2px solid #E7E7E7; padding-bottom: 10px;">
 				Your Account Details Have Been Updated
@@ -266,19 +400,89 @@ function buildAccountUpdateBody(array $formData, string $accountId) {
 			<p style="color: #3D3D3D; font-size: 14px; margin-bottom: 30px;">
 				Your CDS account (Account ID: ' . htmlspecialchars($accountId) . ') has been updated by our team.
 			</p>
-			<table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
-				<tr style="background-color: #F9F9F9;">
-					<td colspan="2" style="padding: 15px; color: #000000; font-weight: bold; border: 1px solid #E7E7E7;">
-						Your Updated Details
-					</td>
-				</tr>
-				' . $rows . '
-			</table>
+			' . $tableBlock . '
 			<p style="color: #3D3D3D; font-size: 14px;">
 				If you have any questions, please contact us.
 			</p>
 			' . $footer;
     return $body;
+}
+
+function parse_admin_notify_emails(): array {
+    if (!defined('ADMIN_NOTIFY_EMAIL') || trim((string)ADMIN_NOTIFY_EMAIL) === '') {
+        return [];
+    }
+    $out = [];
+    foreach (explode(',', ADMIN_NOTIFY_EMAIL) as $part) {
+        $e = trim($part);
+        if ($e !== '' && filter_var($e, FILTER_VALIDATE_EMAIL)) {
+            $out[] = $e;
+        }
+    }
+    return array_values(array_unique($out));
+}
+
+function buildAdminAccountUpdateNotifyBody(array $formData, string $accountId, ?array $previousFormData, ?string $updatedByAdminEmail): string {
+    $header = getEmailHeader();
+    $footer = getEmailFooter();
+    $tableBlock = buildAccountUpdateTableBlock($formData, $previousFormData);
+    $when = date('F j, Y \a\t g:i A');
+    $userEmail = htmlspecialchars(trim($formData['Email'] ?? ''));
+    $nameRaw = trim($formData['NameDenoInitials'] ?? '');
+    if ($nameRaw === '') {
+        $nameRaw = trim(($formData['Initials'] ?? '') . ' ' . ($formData['Surname'] ?? ''));
+    }
+    $userName = htmlspecialchars($nameRaw !== '' ? $nameRaw : '—');
+    $byLine = '';
+    if ($updatedByAdminEmail !== null && $updatedByAdminEmail !== '') {
+        $byLine = '<p style="color: #3D3D3D; font-size: 14px; margin-bottom: 8px;">Updated by: <strong>' . htmlspecialchars($updatedByAdminEmail) . '</strong></p>';
+    }
+    $body = $header . '
+			<h1 style="color: #FF8800; font-size: 24px; margin-bottom: 5px; border-bottom: 2px solid #E7E7E7; padding-bottom: 10px;">
+				User details updated successfully
+			</h1>
+			<p style="color: #3D3D3D; font-size: 14px; margin-bottom: 16px;">
+				A CDS submission was saved and synced to CSE successfully.
+			</p>
+			<p style="color: #3D3D3D; font-size: 14px; margin-bottom: 6px;"><strong>Account ID:</strong> ' . htmlspecialchars($accountId) . '</p>
+			<p style="color: #3D3D3D; font-size: 14px; margin-bottom: 6px;"><strong>User email:</strong> ' . $userEmail . '</p>
+			<p style="color: #3D3D3D; font-size: 14px; margin-bottom: 6px;"><strong>User name:</strong> ' . $userName . '</p>
+			<p style="color: #8E8E93; font-size: 13px; margin-bottom: 20px;">' . htmlspecialchars($when) . '</p>
+			' . $byLine . '
+			' . $tableBlock . '
+			<p style="color: #3D3D3D; font-size: 14px;">
+				This is an automated notification from the CDS admin system.
+			</p>
+			' . $footer;
+    return $body;
+}
+
+/**
+ * Notify configured admin addresses that a submission was updated successfully.
+ */
+function sendAdminAccountUpdateNotifyEmail(array $formData, string $accountId, ?array $previousFormData = null, ?string $updatedByAdminEmail = null): bool {
+    $recipients = parse_admin_notify_emails();
+    if (empty($recipients)) {
+        return false;
+    }
+    if (!SMTP_HOST || !SMTP_USERNAME || !SMTP_PASSWORD) {
+        email_log('Admin notify email skipped: SMTP not configured', 'warn');
+        return false;
+    }
+    try {
+        $mail = createPhpMailer();
+        foreach ($recipients as $addr) {
+            $mail->addAddress($addr);
+        }
+        $mail->Subject = '[CDS Admin] User updated successfully — Account ' . $accountId;
+        $mail->Body = buildAdminAccountUpdateNotifyBody($formData, $accountId, $previousFormData, $updatedByAdminEmail);
+        $mail->send();
+        email_log('Admin update notify sent to ' . implode(', ', $recipients) . ' for account ' . $accountId);
+        return true;
+    } catch (PHPMailerException $e) {
+        email_log('Admin update notify failed: ' . $e->getMessage(), 'error');
+        return false;
+    }
 }
 
 /**
@@ -311,7 +515,7 @@ function sendAccountCreationEmail(array $formData, string $accountId) {
 /**
  * Send notification when admin updates user details.
  */
-function sendAccountUpdateEmail(array $formData, string $accountId) {
+function sendAccountUpdateEmail(array $formData, string $accountId, ?array $previousFormData = null) {
     $to = trim($formData['Email'] ?? '');
     if (!$to || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
         email_log('Account update email skipped: invalid/missing recipient', 'warn');
@@ -325,7 +529,7 @@ function sendAccountUpdateEmail(array $formData, string $accountId) {
         $mail = createPhpMailer();
         $mail->addAddress($to);
         $mail->Subject = 'Your CDS Account Details Have Been Updated - ' . $accountId;
-        $mail->Body = buildAccountUpdateBody($formData, $accountId);
+        $mail->Body = buildAccountUpdateBody($formData, $accountId, $previousFormData);
         $mail->send();
         email_log('Account update email sent to ' . $to . ' for account ' . $accountId);
         return true;
