@@ -8,6 +8,11 @@
     <title>CDS Account Opening</title>
     <link rel="stylesheet" href="assets/css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Baskervville:ital,wght@0,400..700;1,400..700&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
+    
 </head>
 
 
@@ -82,7 +87,7 @@
                             
                             <div class="form-group">
                                 <label for="Initials" class="required">Initials</label>
-                                <input type="text" id="Initials" name="Initials" maxlength="15" required>
+                                <input type="text" id="Initials" name="Initials" maxlength="15" required placeholder="M. P. S. A.">
                                 <div class="error-message">Please enter initials (max 15 characters)</div>
                             </div>
                         </div>
@@ -90,14 +95,13 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="Surname" class="required">Surname</label>
-                                <input type="text" id="Surname" name="Surname" maxlength="50" required>
+                                <input type="text" id="Surname" name="Surname" maxlength="50" required placeholder="Perera">
                                 <div class="error-message">Please enter surname</div>
                             </div>
                             
                             <div class="form-group">
                                 <label for="NameDenoInitials" class="required">Full Name (Denoted by Initials)</label>
-                                <input type="text" id="NameDenoInitials" name="NameDenoInitials" maxlength="160" required>
-                                <div class="form-note">Full name represented by initials</div>
+                                <input type="text" id="NameDenoInitials" name="NameDenoInitials" maxlength="160" required  placeholder="M. P. S. A. Perera">
                                 <div class="error-message">Please enter full name</div>
                             </div>
                         </div>
@@ -105,19 +109,18 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="MobileNo" class="required">Mobile Number</label>
-                                <input type="tel" id="MobileNo" name="MobileNo" maxlength="16" required pattern="[0-9+]{10,16}">
-                                <div class="form-note">Format: +94123456789 or 0123456789</div>
+                                <input type="tel" id="MobileNo" name="MobileNo" maxlength="16" required pattern="[0-9+]{10,16}" placeholder="077 123 4567">
                                 <div class="error-message">Please enter a valid mobile number (10-16 digits)</div>
                             </div>
                             
                             <div class="form-group">
                                 <label for="TelphoneNo">Telephone Number</label>
-                                <input type="tel" id="TelphoneNo" name="TelphoneNo" maxlength="16">
+                                <input type="tel" id="TelphoneNo" name="TelphoneNo" maxlength="16" placeholder="011 223 4455">
                             </div>
                             
                             <div class="form-group">
-                                <label for="Email" class="required">Email Address</label>
-                                <input type="email" id="Email" name="Email" maxlength="100" required>
+                                <label for="Email" class="required">E-Mail Address</label>
+                                <input type="email" id="Email" name="Email" maxlength="100" required placeholder="amalperera@gmail.com">
                                 <div class="error-message">Please enter a valid email address</div>
                             </div>
                         </div>
@@ -125,7 +128,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="DateOfBirthday" class="required">Date of Birth</label>
-                                <input type="date" id="DateOfBirthday" name="DateOfBirthday" required>
+                                <input type="date" id="DateOfBirthday" name="DateOfBirthday" required placeholder="01/15/1985">
                                 <div class="error-message">Please enter a valid date of birth</div>
                             </div>
                             
@@ -166,14 +169,13 @@
                             
                             <div class="form-group" id="nic-field">
                                 <label for="NicNo" class="required">NIC No</label>
-                                <input type="text" required id="NicNo" name="NicNo" maxlength="12" pattern="[0-9]{9,12}[VX]?" title="Enter valid NIC number (e.g., 123456789V)">
-                                <div class="form-note">Format: 123456789V or 200012345678</div>
+                                <input type="text" required id="NicNo" name="NicNo" maxlength="12" pattern="[0-9]{9,12}[VX]?" title="Enter valid NIC number (e.g., 123456789V)" placeholder="123456789V">
                                 <div class="error-message">Please enter valid NIC number</div>
                             </div>
                             
                             <div class="form-group" id="passport-field" style="display: none;">
                                 <label for="PassportNo" class="required">Passport No</label>
-                                <input type="text" id="PassportNo" name="PassportNo" maxlength="50">
+                                <input type="text" id="PassportNo" name="PassportNo" maxlength="50" placeholder="L1234567">
                                 <div class="error-message">Please enter passport number</div>
                             </div>
                         </div>
@@ -181,7 +183,7 @@
                         <div class="form-row">
                             <div class="form-group" id="passport-exp-field" style="display: none;">
                                 <label for="PassportExpDate" class="required">Passport Expiry Date</label>
-                                <input type="date" id="PassportExpDate" name="PassportExpDate">
+                                <input type="date" id="PassportExpDate" name="PassportExpDate" placeholder="12/31/2030">
                                 <div class="error-message">Please enter passport expiry date</div>
                             </div>
                         </div>
@@ -221,12 +223,12 @@
                         <div class="form-row">
                             <div class="form-group" id="cds-account-field" style="display: none;">
                                 <label for="CDSAccountNo">CDS Account Number</label>
-                                <input type="text" id="CDSAccountNo" name="CDSAccountNo" maxlength="20">
+                                <input type="text" id="CDSAccountNo" name="CDSAccountNo" maxlength="20" placeholder="123456789012">
                             </div>
                             
                             <div class="form-group">
                                 <label for="TinNo">TIN Number</label>
-                                <input type="text" id="TinNo" name="TinNo" maxlength="20">
+                                <input type="text" id="TinNo" name="TinNo" maxlength="20" placeholder="200012345678">
                             </div>
                         </div>
                         
@@ -242,12 +244,12 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="InvestmentOb">Investment Objectives</label>
-                                <textarea id="InvestmentOb" name="InvestmentOb" maxlength="100" rows="3"></textarea>
+                                <textarea id="InvestmentOb" name="InvestmentOb" maxlength="100" rows="3" placeholder="Long-term growth (10+ years)"></textarea>
                             </div>
                             
                             <div class="form-group">
                                 <label for="InvestmentStrategy">Investment Strategy</label>
-                                <textarea id="InvestmentStrategy" name="InvestmentStrategy" maxlength="200" rows="3"></textarea>
+                                <textarea id="InvestmentStrategy" name="InvestmentStrategy" maxlength="200" rows="3" placeholder="Balanced - 50% Stocks, 50% Bonds"></textarea>
                             </div>
                         </div>
                     </div>
@@ -289,25 +291,25 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="ResAddressLine01" class="required">Address Line 1</label>
-                                <input type="text" id="ResAddressLine01" name="ResAddressLine01" maxlength="30" required>
+                                <input type="text" id="ResAddressLine01" name="ResAddressLine01" maxlength="30" required placeholder="456 Galle Road">
                                 <div class="error-message">Please enter address line 1</div>
                             </div>
                             
                             <div class="form-group">
                                 <label for="ResAddressLine02">Address Line 2</label>
-                                <input type="text" id="ResAddressLine02" name="ResAddressLine02" maxlength="30">
+                                <input type="text" id="ResAddressLine02" name="ResAddressLine02" maxlength="30" placeholder="Colombo 3">
                             </div>
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="ResAddressLine03">Address Line 3</label>
-                                <input type="text" id="ResAddressLine03" name="ResAddressLine03" maxlength="15">
+                                <input type="text" id="ResAddressLine03" name="ResAddressLine03" maxlength="15" placeholder="Near Liberty Plaza">
                             </div>
                             
                             <div class="form-group">
                                 <label for="ResAddressTown" class="required">Town</label>
-                                <input type="text" id="ResAddressTown" name="ResAddressTown" maxlength="15" required>
+                                <input type="text" id="ResAddressTown" name="ResAddressTown" maxlength="15" required placeholder="Colombo">
                                 <div class="error-message">Please enter Town</div>
                             </div>
                         </div>
@@ -359,7 +361,7 @@
                                 <label for="CorrAddressStatus">Correspondence Address Same as Residential?</label>
                                 <div class="radio-group">
                                     <div class="radio-option">
-                                        <input type="radio" id="corr_addr_y" name="CorrAddressStatus" value="Y" checked>
+                                        <input type="radio" id="corr_addr_y" name="CorrAddressStatus" value="Y">
                                         <label for="corr_addr_y">Yes</label>
                                     </div>
                                     <div class="radio-option">
@@ -369,28 +371,28 @@
                                 </div>
                             </div>
                         </div>
-                        <div id="corr-address-fields" class="form-row" style="display: none;">
+                        <div class="form-row">
                             <div class="form-group">
                                 <label for="CorrAddressLine01">Corr Address Line 1</label>
-                                <input type="text" id="CorrAddressLine01" name="CorrAddressLine01" maxlength="30">
+                                <input type="text" id="CorrAddressLine01" name="CorrAddressLine01" maxlength="30" placeholder="456 Galle Road">
                             </div>
                             <div class="form-group">
                                 <label for="CorrAddressLine02">Corr Address Line 2</label>
-                                <input type="text" id="CorrAddressLine02" name="CorrAddressLine02" maxlength="30">
+                                <input type="text" id="CorrAddressLine02" name="CorrAddressLine02" maxlength="30" placeholder="Colombo 3">
                             </div>
                         </div>
-                        <div id="corr-address-fields-row2" class="form-row" style="display: none;">
+                        <div class="form-row">
                             <div class="form-group">
                                 <label for="CorrAddressLine03">Corr Address Line 3</label>
-                                <input type="text" id="CorrAddressLine03" name="CorrAddressLine03" maxlength="15">
+                                <input type="text" id="CorrAddressLine03" name="CorrAddressLine03" maxlength="15" placeholder="Opposite Cinnamon Grand Hotel">
                             </div>
                             <div class="form-group">
                                 <label for="CorrAddressTown">Corr Address Town</label>
-                                <input type="text" id="CorrAddressTown" name="CorrAddressTown" maxlength="15">
+                                <input type="text" id="CorrAddressTown" name="CorrAddressTown" maxlength="15" placeholder="Colombo">
                             </div>
                             <div class="form-group">
                                 <label for="CorrAddressDistrict">Corr Address District</label>
-                                <input type="text" id="CorrAddressDistrict" name="CorrAddressDistrict" maxlength="10">
+                                <input type="text" id="CorrAddressDistrict" name="CorrAddressDistrict" maxlength="10" placeholder="Colombo">
                             </div>
                         </div>
                     </div>
@@ -415,7 +417,7 @@
                             
                             <div class="form-group">
                                 <label for="Occupation">Occupation</label>
-                                <input type="text" id="Occupation" name="Occupation" maxlength="50">
+                                <input type="text" id="Occupation" name="Occupation" maxlength="50" placeholder="Marketing Manager">
                             </div>
                         </div>
                         
@@ -423,30 +425,30 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="NameOfEmployer">Name of Employer</label>
-                                    <input type="text" id="NameOfEmployer" name="NameOfEmployer" maxlength="100">
+                                    <input type="text" id="NameOfEmployer" name="NameOfEmployer" maxlength="100" placeholder="XYZ Corporation Pvt Ltd">
                                 </div>
                                 
                                 <div class="form-group">
                                     <label for="AddressOfEmployer">Address of Employer</label>
-                                    <input type="text" id="AddressOfEmployer" name="AddressOfEmployer" maxlength="150">
+                                    <input type="text" id="AddressOfEmployer" name="AddressOfEmployer" maxlength="150" placeholder="123 Marketing Plaza, 2nd Floor, Colombo 5">
                                 </div>
                             </div>
                             
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="OfficePhoneNo">Office Phone Number</label>
-                                    <input type="tel" id="OfficePhoneNo" name="OfficePhoneNo" maxlength="16">
+                                    <input type="tel" id="OfficePhoneNo" name="OfficePhoneNo" maxlength="16" placeholder="011 456 7890">
                                 </div>
                                 
                                 <div class="form-group">
                                     <label for="OfficeEmail">Office Email</label>
-                                    <input type="email" id="OfficeEmail" name="OfficeEmail" maxlength="100">
+                                    <input type="email" id="OfficeEmail" name="OfficeEmail" maxlength="100" placeholder="hr@xyzcorporation.com">
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="EmployeeComment">Employee Comment</label>
-                                    <textarea id="EmployeeComment" name="EmployeeComment" maxlength="500" rows="3"></textarea>
+                                    <textarea id="EmployeeComment" name="EmployeeComment" maxlength="500" rows="3" placeholder="Employed at XYZ Corporation Pvt Ltd for 5 years as Marketing Manager, leading a 10-person team."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -456,11 +458,11 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="NameOfBusiness">Name of Business</label>
-                                <input type="text" id="NameOfBusiness" name="NameOfBusiness" maxlength="100">
+                                <input type="text" id="NameOfBusiness" name="NameOfBusiness" maxlength="100" placeholder="ABC Marketing Solutions Pvt Ltd">
                             </div>
                             <div class="form-group">
                                 <label for="AddressOfBusiness">Address of Business</label>
-                                <input type="text" id="AddressOfBusiness" name="AddressOfBusiness" maxlength="150">
+                                <input type="text" id="AddressOfBusiness" name="AddressOfBusiness" maxlength="150" placeholder="789 Duplication Road, Colombo 5">
                             </div>
                         </div>
                         <div class="form-row">
@@ -479,7 +481,7 @@
                             </div>
                             <div class="form-group">
                                 <label for="OtherConnBusinessDesc">Other Connected Business Description</label>
-                                <input type="text" id="OtherConnBusinessDesc" name="OtherConnBusinessDesc" maxlength="200">
+                                <input type="text" id="OtherConnBusinessDesc" name="OtherConnBusinessDesc" maxlength="200" placeholder="Co-founder of ABC Digital Solutions Pvt Ltd, holding a 10% stake.">
                             </div>
                         </div>
                     </div>
@@ -494,7 +496,7 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="BankAccountNo" class="required">Bank Account Number</label>
-                                <input type="text" id="BankAccountNo" name="BankAccountNo" maxlength="12" required>
+                                <input type="text" id="BankAccountNo" name="BankAccountNo" maxlength="12" required placeholder="123456789123">
                                 <div class="error-message">Please enter bank account number</div>
                             </div>
                             
@@ -702,16 +704,14 @@
                                         <label for="usa_person_y">Yes</label>
                                     </div>
                                     <div class="radio-option">
-                                        <input type="radio" id="usa_person_n" name="UsaPersonStatus" value="N" checked>
+                                        <input type="radio" id="usa_person_n" name="UsaPersonStatus" value="N">
                                         <label for="usa_person_n">No</label>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div id="usa-person-fields" class="form-row" style="display: none;">
                             <div class="form-group">
                                 <label for="UsaTaxIdentificationNo">USA Tax Identification No</label>
-                                <input type="text" id="UsaTaxIdentificationNo" name="UsaTaxIdentificationNo" maxlength="50">
+                                <input type="text" id="UsaTaxIdentificationNo" name="UsaTaxIdentificationNo" maxlength="50" placeholder="123-45-6789">
                             </div>
                             <div class="form-group">
                                 <label for="FactaDeclaration">FACTA Declaration</label>
@@ -736,20 +736,18 @@
                                         <label for="dual_cit_y">Yes</label>
                                     </div>
                                     <div class="radio-option">
-                                        <input type="radio" id="dual_cit_n" name="DualCitizenship" value="N" checked>
+                                        <input type="radio" id="dual_cit_n" name="DualCitizenship" value="N">
                                         <label for="dual_cit_n">No</label>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div id="dual-citizen-fields" class="form-row" style="display: none;">
                             <div class="form-group">
                                 <label for="DualCitizenCountry">Dual Citizen Country</label>
-                                <input type="text" id="DualCitizenCountry" name="DualCitizenCountry" maxlength="10">
+                                <input type="text" id="DualCitizenCountry" name="DualCitizenCountry" maxlength="10" placeholder="United Kingdom">
                             </div>
                             <div class="form-group">
                                 <label for="DualCitizenPassport">Dual Citizen Passport No</label>
-                                <input type="text" id="DualCitizenPassport" name="DualCitizenPassport" maxlength="50">
+                                <input type="text" id="DualCitizenPassport" name="DualCitizenPassport" maxlength="50" placeholder="UKP12345678">
                             </div>
                         </div>
                         <div class="form-row">
@@ -1390,7 +1388,7 @@
             const obj = {};
             const radioDefaults = {
                 'Gender': 'M', 'IsPEP': 'N', 'PEP_Q1': 'N', 'PEP_Q2': 'N', 'PEP_Q3': 'N', 'PEP_Q4': 'N',
-                'LitigationStatus': 'N', 'BankAccountType': 'I', 'ResAddressStatus': 'Y', 'CorrAddressStatus': 'Y',
+                'LitigationStatus': 'N', 'BankAccountType': 'I', 'ResAddressStatus': 'Y', 'CorrAddressStatus': 'N',
                 'OtherConnBusinessStatus': 'N', 'UsaPersonStatus': 'N', 'FactaDeclaration': 'N', 'DualCitizenship': 'N', 'IsLKPassport': 'N'
             };
             const elements = form.elements;
@@ -1726,9 +1724,6 @@
             toggleEmploymentFields();
             togglePEPQuestions();
             toggleLitigationDetails();
-            toggleCorrAddressFields();
-            toggleUsaPersonFields();
-            toggleDualCitizenFields();
 
             // Add event listeners
             document.getElementById('IdentificationProof')?.addEventListener('change', toggleIdentificationFields);
@@ -1742,21 +1737,6 @@
             // Litigation radio buttons
             document.querySelectorAll('input[name="LitigationStatus"]').forEach(radio => {
                 radio.addEventListener('change', toggleLitigationDetails);
-            });
-
-            // Correspondence address same as residential?
-            document.querySelectorAll('input[name="CorrAddressStatus"]').forEach(radio => {
-                radio.addEventListener('change', toggleCorrAddressFields);
-            });
-
-            // USA Person Status
-            document.querySelectorAll('input[name="UsaPersonStatus"]').forEach(radio => {
-                radio.addEventListener('change', toggleUsaPersonFields);
-            });
-
-            // Dual Citizenship
-            document.querySelectorAll('input[name="DualCitizenship"]').forEach(radio => {
-                radio.addEventListener('change', toggleDualCitizenFields);
             });
 
             // Existing CDS account radio buttons
@@ -1827,51 +1807,6 @@
                 } else {
                     litigationDetails.classList.remove('active');
                 }
-            }
-        }
-
-        function toggleCorrAddressFields() {
-            const corrSame = document.querySelector('input[name="CorrAddressStatus"]:checked');
-            const fields1 = document.getElementById('corr-address-fields');
-            const fields2 = document.getElementById('corr-address-fields-row2');
-            const inputs = ['CorrAddressLine01', 'CorrAddressLine02', 'CorrAddressLine03', 'CorrAddressTown', 'CorrAddressDistrict'];
-
-            const show = corrSame && corrSame.value === 'N';
-            if (fields1) fields1.style.display = show ? 'flex' : 'none';
-            if (fields2) fields2.style.display = show ? 'flex' : 'none';
-            if (!show) {
-                inputs.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.value = '';
-                });
-            }
-        }
-
-        function toggleUsaPersonFields() {
-            const usaPerson = document.querySelector('input[name="UsaPersonStatus"]:checked');
-            const fields = document.getElementById('usa-person-fields');
-
-            const show = usaPerson && usaPerson.value === 'Y';
-            if (fields) fields.style.display = show ? 'flex' : 'none';
-            if (!show) {
-                const el = document.getElementById('UsaTaxIdentificationNo');
-                if (el) el.value = '';
-                const factaN = document.querySelector('input[name="FactaDeclaration"][value="N"]');
-                if (factaN) factaN.checked = true;
-            }
-        }
-
-        function toggleDualCitizenFields() {
-            const dualCit = document.querySelector('input[name="DualCitizenship"]:checked');
-            const fields = document.getElementById('dual-citizen-fields');
-
-            const show = dualCit && dualCit.value === 'Y';
-            if (fields) fields.style.display = show ? 'flex' : 'none';
-            if (!show) {
-                ['DualCitizenCountry', 'DualCitizenPassport'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.value = '';
-                });
             }
         }
 
@@ -1981,14 +1916,6 @@
             }
         });
     </script>
-
-
-
-
-
-
-
-
 </body>
 
 </html>

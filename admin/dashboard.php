@@ -17,7 +17,7 @@ $msg = $_GET['msg'] ?? '';
     <link rel="stylesheet" href="../assets/css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .admin-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; background: #1a237e; color: white; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; padding: 24px 16px; background: #000; color: #fff; border-radius: 16px; }
         .admin-header h1 { margin: 0; font-size: 20px; }
         .admin-header a { color: white; text-decoration: none; }
         .admin-content { padding: 30px; }
@@ -27,10 +27,6 @@ $msg = $_GET['msg'] ?? '';
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background: #f5f5f5; font-weight: 600; }
         .actions a { margin-right: 8px; }
-        .btn { padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; cursor: pointer; border: none; }
-        .btn-primary { background: #3498db; color: white; }
-        .btn-danger { background: #e74c3c; color: white; }
-        .btn-danger:hover, .btn-primary:hover { opacity: 0.9; }
         .bulk-actions { margin-bottom: 20px; }
         .bulk-actions .btn { margin-right: 8px; }
         .delete-modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
