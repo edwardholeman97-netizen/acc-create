@@ -1031,6 +1031,7 @@
             const currentStepElement = document.getElementById('step-' + currentStep);
             const requiredFields = currentStepElement.querySelectorAll('[required]');
             let isValid = true;
+            const validatedRadioGroups = new Set();
 
             // Clear previous errors in this step
             currentStepElement.querySelectorAll('.field-error').forEach(field => {
@@ -1040,6 +1041,11 @@
             // Validate each required field
             const idType = document.getElementById('IdentificationProof')?.value;
             requiredFields.forEach(field => {
+                // Validate each required radio group once (not each option)
+                if (field.type === 'radio') {
+                    if (validatedRadioGroups.has(field.name)) return;
+                    validatedRadioGroups.add(field.name);
+                }
                 // Skip NicNo when Passport is selected; skip PassportNo when NIC is selected
                 if (currentStep === 2 && field.id === 'NicNo' && idType === 'Passport') return;
                 if (currentStep === 2 && field.id === 'PassportNo' && idType === 'NIC') return;
@@ -1596,8 +1602,18 @@
             let isValid = true;
             let errorMessage = '';
 
+            // Required radio groups must have one selected option
+            if (field.type === 'radio' && field.hasAttribute('required')) {
+                const group = document.querySelectorAll(`input[type="radio"][name="${field.name}"]`);
+                const hasSelection = Array.from(group).some(radio => radio.checked);
+                if (!hasSelection) {
+                    errorMessage = 'Please select an option';
+                    isValid = false;
+                }
+            }
+
             // Check if field is required and empty
-            if (field.hasAttribute('required') && !field.value.trim()) {
+            if (field.type !== 'radio' && field.hasAttribute('required') && !field.value.trim()) {
                 errorMessage = 'This field is required';
                 isValid = false;
             }
