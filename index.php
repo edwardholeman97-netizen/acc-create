@@ -1837,12 +1837,30 @@
             const employmentDetails = document.getElementById('employment-details');
 
             if (employmentDetails) {
-                if (['Y', 'S'].includes(employmentStatus)) {
+                const visible = ['Y', 'S'].includes(employmentStatus);
+                if (visible) {
                     employmentDetails.classList.add('active');
                 } else {
                     employmentDetails.classList.remove('active');
                 }
+                setConditionalRequired(employmentDetails, visible);
             }
+        }
+
+        function setConditionalRequired(container, isVisible) {
+            if (!container) return;
+            container.querySelectorAll('input, select, textarea').forEach(el => {
+                if (isVisible) {
+                    if (el.dataset.wasRequired === '1') {
+                        el.required = true;
+                    }
+                } else {
+                    if (el.required) {
+                        el.dataset.wasRequired = '1';
+                    }
+                    el.required = false;
+                }
+            });
         }
 
         function togglePEPQuestions() {
@@ -1850,11 +1868,13 @@
             const pepQuestions = document.getElementById('pep-questions');
 
             if (pepQuestions) {
-                if (isPEP && isPEP.value === 'Y') {
+                const visible = !!(isPEP && isPEP.value === 'Y');
+                if (visible) {
                     pepQuestions.classList.add('active');
                 } else {
                     pepQuestions.classList.remove('active');
                 }
+                setConditionalRequired(pepQuestions, visible);
             }
         }
 
@@ -1863,11 +1883,13 @@
             const litigationDetails = document.getElementById('litigation-details');
 
             if (litigationDetails) {
-                if (litigationStatus && litigationStatus.value === 'Y') {
+                const visible = !!(litigationStatus && litigationStatus.value === 'Y');
+                if (visible) {
                     litigationDetails.classList.add('active');
                 } else {
                     litigationDetails.classList.remove('active');
                 }
+                setConditionalRequired(litigationDetails, visible);
             }
         }
 
