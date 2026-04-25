@@ -473,6 +473,25 @@ function cse_resubmitToApi(array $formData, string $accountId, array $imagePaths
     if (empty($formData['UserID'])) {
         $formData['UserID'] = $formData['Email'] ?? cse_generateUserId();
     }
+
+    // InvestorId is permanently locked after first submission. Always restore
+    // the originally stored value, regardless of what the caller passes in.
+    try {
+        require_once dirname(__DIR__) . '/database/connection.php';
+        $pdo = getDb();
+        $stmt = $pdo->prepare('SELECT form_data FROM cds_submissions WHERE account_id = ? LIMIT 1');
+        $stmt->execute([$accountId]);
+        $existing = $stmt->fetchColumn();
+        if ($existing) {
+            $existingForm = json_decode($existing, true) ?: [];
+            if (array_key_exists('InvestorId', $existingForm)) {
+                $formData['InvestorId'] = $existingForm['InvestorId'];
+            }
+        }
+    } catch (Throwable $e) {
+        cse_liveLog('InvestorId lock check failed: ' . $e->getMessage(), 'error');
+    }
+
     try {
         cse_validateRequiredSaveUserFields($formData);
         $token = cse_getAuthToken();

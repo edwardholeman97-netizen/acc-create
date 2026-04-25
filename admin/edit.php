@@ -34,16 +34,16 @@ $fieldConfig = [
         ['key' => 'Initials', 'label' => 'Initials', 'type' => 'text'],
         ['key' => 'Surname', 'label' => 'Surname', 'type' => 'text'],
         ['key' => 'NameDenoInitials', 'label' => 'Full Name (Denoted by Initials)', 'type' => 'text'],
-        ['key' => 'MobileNo', 'label' => 'Mobile Number', 'type' => 'tel'],
-        ['key' => 'TelphoneNo', 'label' => 'Telephone Number', 'type' => 'tel'],
-        ['key' => 'Email', 'label' => 'Email Address', 'type' => 'email'],
+        ['key' => 'MobileNo', 'label' => 'Mobile Number', 'type' => 'tel', 'locked' => true],
+        ['key' => 'TelphoneNo', 'label' => 'Telephone Number', 'type' => 'tel', 'locked' => true],
+        ['key' => 'Email', 'label' => 'Email Address', 'type' => 'email', 'locked' => true],
         ['key' => 'DateOfBirthday', 'label' => 'Date of Birth', 'type' => 'date'],
         ['key' => 'Gender', 'label' => 'Gender', 'type' => 'yn', 'options' => ['M' => 'Male', 'F' => 'Female']],
     ],
     'Identification' => [
         ['key' => 'IdentificationProof', 'label' => 'Identification Proof', 'type' => 'select', 'options' => get_form_id_proof_options()],
-        ['key' => 'NicNo', 'label' => 'NIC No', 'type' => 'text', 'wrapperId' => 'nic-field', 'showWhen' => ['IdentificationProof' => 'NIC']],
-        ['key' => 'PassportNo', 'label' => 'Passport No', 'type' => 'text', 'wrapperId' => 'passport-field', 'showWhen' => ['IdentificationProof' => 'Passport']],
+        ['key' => 'NicNo', 'label' => 'NIC No', 'type' => 'text', 'wrapperId' => 'nic-field', 'showWhen' => ['IdentificationProof' => 'NIC'], 'locked' => true],
+        ['key' => 'PassportNo', 'label' => 'Passport No', 'type' => 'text', 'wrapperId' => 'passport-field', 'showWhen' => ['IdentificationProof' => 'Passport'], 'locked' => true],
         ['key' => 'PassportExpDate', 'label' => 'Passport Expiry Date', 'type' => 'date', 'wrapperId' => 'passport-exp-field', 'showWhen' => ['IdentificationProof' => 'Passport']],
     ],
     'Investment' => [
@@ -51,7 +51,7 @@ $fieldConfig = [
         ['key' => 'ExitCDSAccount', 'label' => 'Existing CDS Account', 'type' => 'yn'],
         ['key' => 'CDSAccountNo', 'label' => 'CDS Account Number', 'type' => 'text', 'wrapperId' => 'cds-account-field', 'showWhen' => ['ExitCDSAccount' => 'Y']],
         ['key' => 'TinNo', 'label' => 'TIN Number', 'type' => 'text'],
-        ['key' => 'InvestorId', 'label' => 'Investor / Advisor', 'type' => 'text'],
+        ['key' => 'InvestorId', 'label' => 'Investor / Advisor', 'type' => 'text', 'locked' => true],
         ['key' => 'InvestmentOb', 'label' => 'Investment Objectives', 'type' => 'textarea'],
         ['key' => 'InvestmentStrategy', 'label' => 'Investment Strategy', 'type' => 'textarea'],
     ],
@@ -87,10 +87,10 @@ $fieldConfig = [
         ['key' => 'OtherConnBusinessDesc', 'label' => 'Other Connected Business Desc', 'type' => 'text', 'inGroup' => 'employment-details'],
     ],
     'Bank & Funds' => [
-        ['key' => 'BankAccountNo', 'label' => 'Bank Account Number', 'type' => 'text'],
-        ['key' => 'BankCode', 'label' => 'Bank Code', 'type' => 'text'],
-        ['key' => 'BankBranch', 'label' => 'Bank Branch', 'type' => 'text'],
-        ['key' => 'BankAccountType', 'label' => 'Bank Account Type', 'type' => 'text'],
+        ['key' => 'BankAccountNo', 'label' => 'Bank Account Number', 'type' => 'text', 'locked' => true],
+        ['key' => 'BankCode', 'label' => 'Bank Code', 'type' => 'text', 'locked' => true],
+        ['key' => 'BankBranch', 'label' => 'Bank Branch', 'type' => 'text', 'locked' => true],
+        ['key' => 'BankAccountType', 'label' => 'Bank Account Type', 'type' => 'text', 'locked' => true],
         ['key' => 'ExpValueInvestment', 'label' => 'Expected Value of Investment', 'type' => 'select', 'options' => get_form_exp_value_options()],
         ['key' => 'SourseOfFund', 'label' => 'Source of Funds', 'type' => 'select', 'options' => get_form_source_of_funds_options()],
     ],
@@ -118,9 +118,13 @@ $fieldConfig = [
 ];
 
 $usedKeys = [];
+$lockedKeys = [];
 foreach ($fieldConfig as $section => $fields) {
     foreach ($fields as $f) {
         $usedKeys[$f['key']] = true;
+        if (!empty($f['locked'])) {
+            $lockedKeys[$f['key']] = true;
+        }
     }
 }
 foreach (array_keys($formData) as $key) {
@@ -148,11 +152,18 @@ $sectionIcons = [
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $updated = [];
     foreach ($formData as $k => $v) {
+        if (isset($lockedKeys[$k])) {
+            $updated[$k] = $v;
+            continue;
+        }
         $updated[$k] = $_POST['f_' . $k] ?? $v;
     }
     foreach ($_POST as $pk => $pv) {
         if (strpos($pk, 'f_') === 0) {
             $key = substr($pk, 2);
+            if (isset($lockedKeys[$key])) {
+                continue;
+            }
             if (!isset($formData[$key])) {
                 $updated[$key] = $pv;
             }
@@ -228,8 +239,12 @@ function renderField($field, $value, $formData = []) {
     $escKey = htmlspecialchars($key);
     $label = htmlspecialchars($field['label']);
     $id = 'f_' . preg_replace('/[^a-zA-Z0-9_]/', '_', $key);
+    $locked = !empty($field['locked']);
+    $lockAttr = $locked ? ' readonly disabled' : '';
+    $lockClass = $locked ? ' is-locked' : '';
+    $lockIcon = $locked ? ' <i class="fas fa-lock" title="Locked - cannot be edited from admin"></i>' : '';
 
-    $inner = '<div class="form-group"><label for="' . $id . '">' . $label . '</label>';
+    $inner = '<div class="form-group' . $lockClass . '"><label for="' . $id . '">' . $label . $lockIcon . '</label>';
 
     switch ($field['type'] ?? 'text') {
         case 'yn':
@@ -238,31 +253,29 @@ function renderField($field, $value, $formData = []) {
             foreach ($optVal as $ov => $ol) {
                 $checked = ($val === (string)$ov) ? ' checked' : '';
                 $oid = $id . '_' . $ov;
-                $inner .= '<div class="radio-option"><input type="radio" id="' . $oid . '" name="' . $name . '" value="' . htmlspecialchars($ov) . '"' . $checked . '><label for="' . $oid . '">' . htmlspecialchars($ol) . '</label></div>';
+                $inner .= '<div class="radio-option"><input type="radio" id="' . $oid . '" name="' . $name . '" value="' . htmlspecialchars($ov) . '"' . $checked . $lockAttr . '><label for="' . $oid . '">' . htmlspecialchars($ol) . '</label></div>';
             }
             $inner .= '</div>';
             break;
         case 'textarea':
-            $inner .= '<textarea id="' . $id . '" name="' . $name . '" rows="3">' . $escVal . '</textarea>';
+            $inner .= '<textarea id="' . $id . '" name="' . $name . '" rows="3"' . $lockAttr . '>' . $escVal . '</textarea>';
             break;
         case 'email':
-            $inner .= '<input type="email" id="' . $id . '" name="' . $name . '" value="' . $escVal . '">';
+            $inner .= '<input type="email" id="' . $id . '" name="' . $name . '" value="' . $escVal . '"' . $lockAttr . '>';
             break;
         case 'tel':
-            $inner .= '<input type="tel" id="' . $id . '" name="' . $name . '" value="' . $escVal . '">';
+            $inner .= '<input type="tel" id="' . $id . '" name="' . $name . '" value="' . $escVal . '"' . $lockAttr . '>';
             break;
         case 'date':
-            $inner .= '<input type="date" id="' . $id . '" name="' . $name . '" value="' . $escVal . '">';
+            $inner .= '<input type="date" id="' . $id . '" name="' . $name . '" value="' . $escVal . '"' . $lockAttr . '>';
             break;
         case 'select':
             $optList = $field['options'] ?? [];
-            // Ignore "undefined" (bug from old main form using wrong API key)
             if ($val === 'undefined') $val = '';
-            // Include stored value if not in options (e.g. from older submission)
             if ($val !== '' && !isset($optList[$val])) {
                 $optList = [$val => $val] + $optList;
             }
-            $inner .= '<select id="' . $id . '" name="' . $name . '">';
+            $inner .= '<select id="' . $id . '" name="' . $name . '"' . $lockAttr . '>';
             $inner .= '<option value="">Select</option>';
             foreach ($optList as $ov => $ol) {
                 $selected = ($val === (string)$ov) ? ' selected' : '';
@@ -271,7 +284,7 @@ function renderField($field, $value, $formData = []) {
             $inner .= '</select>';
             break;
         default:
-            $inner .= '<input type="text" id="' . $id . '" name="' . $name . '" value="' . $escVal . '">';
+            $inner .= '<input type="text" id="' . $id . '" name="' . $name . '" value="' . $escVal . '"' . $lockAttr . '>';
     }
     $inner .= '</div>';
 

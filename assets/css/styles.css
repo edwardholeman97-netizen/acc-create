@@ -823,6 +823,37 @@ textarea:focus {
     background: #455a64;
 }
 
+.admin-edit-form .form-group.is-locked label {
+    color: #6b7280;
+}
+
+.admin-edit-form .form-group.is-locked label .fa-lock {
+    margin-left: 6px;
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+.admin-edit-form .form-group.is-locked input,
+.admin-edit-form .form-group.is-locked textarea,
+.admin-edit-form .form-group.is-locked select {
+    background-color: #f3f4f6;
+    color: #6b7280;
+    cursor: not-allowed;
+    border-color: #e5e7eb;
+}
+
+.admin-edit-form .form-group.is-locked input:focus,
+.admin-edit-form .form-group.is-locked textarea:focus,
+.admin-edit-form .form-group.is-locked select:focus {
+    border-color: #e5e7eb;
+    box-shadow: none;
+}
+
+.admin-edit-form .form-group.is-locked .radio-option label {
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
 .admin-images-section {
     display: flex;
     flex-wrap: wrap;
