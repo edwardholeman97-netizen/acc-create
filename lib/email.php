@@ -538,3 +538,114 @@ function sendAccountUpdateEmail(array $formData, string $accountId, ?array $prev
         return false;
     }
 }
+
+/**
+ * Send a "we received your application — pending admin review" email after the
+ * client first submits the form. The submission is in the DB only, not yet at CSE.
+ */
+function sendClientPendingReviewEmail(array $formData, string $submissionUid): bool {
+    $to = trim($formData['Email'] ?? '');
+    if (!$to || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        email_log('Pending review email skipped: invalid/missing recipient', 'warn');
+        return false;
+    }
+    if (!SMTP_HOST || !SMTP_USERNAME || !SMTP_PASSWORD) {
+        email_log('Pending review email skipped: SMTP not configured', 'warn');
+        return false;
+    }
+    $name = htmlspecialchars(trim(($formData['Initials'] ?? '') . ' ' . ($formData['Surname'] ?? ''))) ?: 'Customer';
+    $header = getEmailHeader();
+    $footer = getEmailFooter();
+    $body = $header . '
+        <h1 style="color: #FF8800; font-size: 24px; margin-bottom: 5px; border-bottom: 2px solid #E7E7E7; padding-bottom: 10px;">
+            We received your CDS application
+        </h1>
+        <p style="color: #3D3D3D; font-size: 14px; margin-bottom: 16px;">
+            Hi ' . $name . ',
+        </p>
+        <p style="color: #3D3D3D; font-size: 14px; margin-bottom: 16px;">
+            Thank you for submitting your CDS Account Opening application. It is now with our review team.
+            We will email you again once your account has been approved and submitted to CSE, or if any
+            changes are required.
+        </p>
+        <p style="color: #8E8E93; font-size: 13px; margin-bottom: 0;">
+            Reference: <strong>' . htmlspecialchars($submissionUid) . '</strong>
+        </p>
+        ' . $footer;
+    try {
+        $mail = createPhpMailer();
+        $mail->addAddress($to);
+        $mail->Subject = 'CDS Application Received - Pending Review';
+        $mail->Body = $body;
+        $mail->send();
+        email_log('Pending review email sent to ' . $to . ' (uid=' . $submissionUid . ')');
+        return true;
+    } catch (PHPMailerException $e) {
+        email_log('Pending review email failed: ' . $e->getMessage(), 'error');
+        return false;
+    }
+}
+
+/**
+ * Send a client edit link with optional admin note. Clicking the link opens
+ * a prefilled form; submitting it pushes directly to CSE.
+ */
+function sendClientEditLinkEmail(array $formData, string $editUrl, ?string $note = null): bool {
+    $to = trim($formData['Email'] ?? '');
+    if (!$to || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        email_log('Edit link email skipped: invalid/missing recipient', 'warn');
+        return false;
+    }
+    if (!SMTP_HOST || !SMTP_USERNAME || !SMTP_PASSWORD) {
+        email_log('Edit link email skipped: SMTP not configured', 'warn');
+        return false;
+    }
+    $name = htmlspecialchars(trim(($formData['Initials'] ?? '') . ' ' . ($formData['Surname'] ?? ''))) ?: 'Customer';
+    $safeUrl = htmlspecialchars($editUrl, ENT_QUOTES, 'UTF-8');
+    $noteHtml = '';
+    if ($note !== null && trim($note) !== '') {
+        $noteHtml = '
+            <div style="background: #FFF8E6; border-left: 4px solid #FF8800; padding: 14px 18px; margin: 16px 0; border-radius: 4px;">
+                <p style="margin: 0 0 6px; color: #3D3D3D; font-weight: 600;">Note from our review team:</p>
+                <p style="margin: 0; color: #3D3D3D; white-space: pre-wrap;">' . nl2br(htmlspecialchars($note)) . '</p>
+            </div>';
+    }
+    $header = getEmailHeader();
+    $footer = getEmailFooter();
+    $body = $header . '
+        <h1 style="color: #FF8800; font-size: 24px; margin-bottom: 5px; border-bottom: 2px solid #E7E7E7; padding-bottom: 10px;">
+            Action required: review your CDS application
+        </h1>
+        <p style="color: #3D3D3D; font-size: 14px; margin-bottom: 16px;">
+            Hi ' . $name . ',
+        </p>
+        <p style="color: #3D3D3D; font-size: 14px; margin-bottom: 16px;">
+            Our review team has asked you to review and update your CDS Account Opening application.
+            Click the button below to open your application.
+        </p>
+        ' . $noteHtml . '
+        <div style="text-align: center; margin: 28px 0;">
+            <a href="' . $safeUrl . '" style="display: inline-block; background-color: #DD4200; padding: 14px 24px; border-radius: 8px; color: #FFFFFF; text-decoration: none; font-weight: 600;">Open my application</a>
+        </div>
+        <p style="color: #8E8E93; font-size: 13px; margin-bottom: 16px;">
+            For your security, this link expires in 3 days, or as soon as you re-submit your application —
+            whichever comes first.
+        </p>
+        <p style="color: #8E8E93; font-size: 12px; word-break: break-all;">
+            If the button does not work, copy and paste this URL into your browser:<br>
+            <a href="' . $safeUrl . '" style="color: #FF8800;">' . $safeUrl . '</a>
+        </p>
+        ' . $footer;
+    try {
+        $mail = createPhpMailer();
+        $mail->addAddress($to);
+        $mail->Subject = 'Action required: please review your CDS application';
+        $mail->Body = $body;
+        $mail->send();
+        email_log('Edit link email sent to ' . $to);
+        return true;
+    } catch (PHPMailerException $e) {
+        email_log('Edit link email failed: ' . $e->getMessage(), 'error');
+        return false;
+    }
+}

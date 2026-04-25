@@ -10,7 +10,11 @@ if (!$id) {
 }
 
 $pdo = getDb();
-$stmt = $pdo->prepare('SELECT id, account_id, form_data, image_paths, created_at, updated_at FROM cds_submissions WHERE id = ?');
+$stmt = $pdo->prepare(
+    'SELECT id, submission_uid, account_id, cse_account_id, form_data, image_paths,'
+    . ' status, admin_note, submitted_to_cse_at, created_at, updated_at'
+    . ' FROM cds_submissions WHERE id = ?'
+);
 $stmt->execute([$id]);
 $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -19,8 +23,17 @@ if (!$row) {
     exit;
 }
 
+$submissionStatus = $row['status'] ?: 'submitted_to_cse';
+$isLockedSubmission = ($submissionStatus === 'submitted_to_cse');
+$isPendingSubmission = in_array($submissionStatus, ['pending_review', 'awaiting_edit'], true);
+
 $formData = json_decode($row['form_data'], true) ?: [];
 $imagePaths = json_decode($row['image_paths'] ?? '{}', true) ?: [];
+
+// Image folder identifier: prefer submission_uid (new rows), fall back to account_id
+// (legacy rows whose folder was created before the migration).
+$imageFolderId = $row['submission_uid'] ?: ($row['account_id'] ?: ('legacy-' . (int)$row['id']));
+$displayCseId = $row['cse_account_id'] ?: ($row['account_id'] ?: '—');
 
 require_once dirname(__DIR__) . '/lib/cse_api.php';
 require_once dirname(__DIR__) . '/includes/form_constants.php';
@@ -150,6 +163,11 @@ $sectionIcons = [
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($isLockedSubmission) {
+        header('Location: dashboard.php?err=' . urlencode('This record has been submitted to CSE and is locked.'));
+        exit;
+    }
+
     $updated = [];
     foreach ($formData as $k => $v) {
         if (isset($lockedKeys[$k])) {
@@ -170,15 +188,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Ensure system fields for CSE API
     $updated['ClientType'] = $updated['ClientType'] ?? 'FI';
     $updated['Residency'] = $updated['Residency'] ?? 'R';
     $updated['ApiUser'] = $updated['ApiUser'] ?? 'DIALOG';
 
-    // Save any newly uploaded images (merge with existing)
+    // Save any newly uploaded images (merge with existing). Folder uses submission_uid
+    // for new rows and account_id for legacy rows.
     $newPaths = [];
     $fileMap = ['selfie_upload' => 'selfie', 'nic_front_upload' => 'nic_front', 'nic_back_upload' => 'nic_back', 'passport_upload' => 'passport'];
-    $baseDir = rtrim(CSE_STORAGE_PATH, '/') . '/uploads/' . preg_replace('/[^a-zA-Z0-9_-]/', '', $row['account_id']);
+    $folderName = preg_replace('/[^a-zA-Z0-9_-]/', '', $imageFolderId);
+    $baseDir = rtrim(CSE_STORAGE_PATH, '/') . '/uploads/' . $folderName;
     foreach ($fileMap as $fileKey => $baseName) {
         if (!empty($_FILES[$fileKey]['tmp_name']) && $_FILES[$fileKey]['error'] === UPLOAD_ERR_OK) {
             if (!is_dir($baseDir)) @mkdir($baseDir, 0750, true);
@@ -186,7 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!in_array(strtolower($ext), ['jpg', 'jpeg', 'png'], true)) $ext = 'jpg';
             $dest = $baseDir . '/' . $baseName . '.' . $ext;
             if (@copy($_FILES[$fileKey]['tmp_name'], $dest)) {
-                $newPaths[$baseName] = 'uploads/' . basename($baseDir) . '/' . basename($dest);
+                $newPaths[$baseName] = 'uploads/' . $folderName . '/' . basename($dest);
             }
         }
     }
@@ -194,7 +213,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $imagePaths = array_merge($imagePaths, $newPaths);
     }
 
-    // Resubmit to CSE API (form data + images with doc payload); only save to DB if successful
+    if ($isPendingSubmission) {
+        // Pre-CSE state: admin is just cleaning data before approval. DB-only save.
+        $stmt = $pdo->prepare('UPDATE cds_submissions SET form_data = ?, image_paths = ?, updated_at = NOW() WHERE id = ?');
+        $stmt->execute([
+            json_encode($updated, JSON_UNESCAPED_UNICODE),
+            json_encode($imagePaths, JSON_UNESCAPED_UNICODE),
+            $id,
+        ]);
+        header('Location: dashboard.php?msg=' . urlencode('Pending submission updated.'));
+        exit;
+    }
+
+    // Legacy / already-submitted-to-CSE rows: resubmit to CSE as before.
     require_once dirname(__DIR__) . '/lib/cse_api.php';
     $resubmitResult = cse_resubmitToApi($updated, $row['account_id'], $imagePaths);
 
@@ -313,26 +344,74 @@ function renderField($field, $value, $formData = []) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit - <?= htmlspecialchars($row['account_id']) ?></title>
+    <title><?= $isLockedSubmission ? 'View' : 'Edit' ?> - <?= htmlspecialchars($displayCseId) ?></title>
     <link rel="stylesheet" href="../assets/css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .admin-status-banner { padding: 14px 20px; border-radius: 10px; margin-bottom: 18px; display: flex; align-items: flex-start; gap: 12px; }
+        .admin-status-banner i { font-size: 18px; margin-top: 2px; }
+        .admin-status-banner.is-locked { background: #f3f4f6; border-left: 4px solid #6b7280; color: #374151; }
+        .admin-status-banner.is-pending { background: #fff8e6; border-left: 4px solid #f59e0b; color: #92400e; }
+        .admin-status-banner strong { display: block; margin-bottom: 2px; }
+        .admin-status-banner p { margin: 0; font-size: 13px; line-height: 1.4; }
+    </style>
 </head>
-<body class="admin-edit-page">
+<body class="admin-edit-page<?= $isLockedSubmission ? ' is-readonly' : '' ?>">
     <header class="admin-edit-header">
-        <h1><i class="fas fa-edit"></i> Edit Account <?= htmlspecialchars($row['account_id']) ?></h1>
+        <h1>
+            <i class="fas <?= $isLockedSubmission ? 'fa-eye' : 'fa-edit' ?>"></i>
+            <?= $isLockedSubmission ? 'View' : 'Edit' ?>
+            Account <?= htmlspecialchars($displayCseId) ?>
+        </h1>
         <div class="header-actions">
             <a href="dashboard.php" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
         </div>
     </header>
 
     <main class="admin-edit-content">
-        <p class="admin-meta">Created: <?= htmlspecialchars($row['created_at']) ?> &bull; Last updated: <?= htmlspecialchars($row['updated_at'] ?? $row['created_at']) ?></p>
+        <p class="admin-meta">
+            Created: <?= htmlspecialchars($row['created_at']) ?>
+            &bull; Last updated: <?= htmlspecialchars($row['updated_at'] ?? $row['created_at']) ?>
+            <?php if (!empty($row['submitted_to_cse_at'])): ?>
+                &bull; Submitted to CSE: <?= htmlspecialchars($row['submitted_to_cse_at']) ?>
+            <?php endif; ?>
+        </p>
+
+        <?php if ($isLockedSubmission): ?>
+        <div class="admin-status-banner is-locked">
+            <i class="fas fa-lock"></i>
+            <div>
+                <strong>This record has been submitted to CSE</strong>
+                <p>It is now locked and read-only. Use the dashboard to delete it if necessary.</p>
+            </div>
+        </div>
+        <?php elseif ($isPendingSubmission): ?>
+        <div class="admin-status-banner is-pending">
+            <i class="fas fa-hourglass-half"></i>
+            <div>
+                <strong>Pending review — not yet sent to CSE</strong>
+                <p>Saving here updates the stored draft only. To send this to CSE, return to the dashboard and click <em>Approve &amp; Send to CSE</em>.</p>
+            </div>
+        </div>
+        <?php endif; ?>
 
         <?php if (!empty($_GET['error'])): ?>
         <div class="admin-edit-error">
             <i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($_GET['error']) ?>
         </div>
         <?php endif; ?>
+
+        <?php
+        // Defense in depth: when the row is locked, force every field to render locked
+        // and suppress the file-upload + submit controls below.
+        if ($isLockedSubmission) {
+            foreach ($fieldConfig as $sectionTitle => &$_fields) {
+                foreach ($_fields as &$_f) { $_f['locked'] = true; }
+                unset($_f);
+            }
+            unset($_fields);
+        }
+        ?>
 
         <form method="post" class="admin-edit-form" enctype="multipart/form-data">
             <?php foreach ($fieldConfig as $sectionTitle => $fields):
@@ -386,7 +465,9 @@ function renderField($field, $value, $formData = []) {
 
             <div class="admin-section">
                 <h2 class="admin-section-title"><i class="fas fa-images"></i> Documents</h2>
+                <?php if (!$isLockedSubmission): ?>
                 <p class="admin-upload-hint">Upload or replace documents (Max 2MB each, JPG/PNG only). New files override existing.</p>
+                <?php endif; ?>
                 <div class="admin-images-upload-grid">
                     <?php
                     $docTypes = [
@@ -407,17 +488,29 @@ function renderField($field, $value, $formData = []) {
                             <?php endif; ?>
                         </div>
                         <div class="img-label"><?= htmlspecialchars($info['label']) ?></div>
+                        <?php if (!$isLockedSubmission): ?>
                         <input type="file" id="<?= htmlspecialchars($info['input']) ?>" name="<?= htmlspecialchars($info['input']) ?>" accept="image/jpeg,image/png">
                         <div class="admin-upload-error" style="display:none;color:#c0392b;font-size:12px;margin-top:4px;"></div>
+                        <?php endif; ?>
                     </div>
                     <?php endforeach; ?>
                 </div>
             </div>
 
+            <?php if (!$isLockedSubmission): ?>
             <div class="form-actions">
-                <button type="submit" class="btn-save" id="admin-submit-btn"><i class="fas fa-paper-plane"></i> Save & Resubmit to CSE</button>
+                <?php if ($isPendingSubmission): ?>
+                <button type="submit" class="btn-save" id="admin-submit-btn"><i class="fas fa-save"></i> Save Draft</button>
+                <?php else: ?>
+                <button type="submit" class="btn-save" id="admin-submit-btn"><i class="fas fa-paper-plane"></i> Save &amp; Resubmit to CSE</button>
+                <?php endif; ?>
                 <a href="dashboard.php" class="btn-cancel"><i class="fas fa-times"></i> Cancel</a>
             </div>
+            <?php else: ?>
+            <div class="form-actions">
+                <a href="dashboard.php" class="btn-cancel"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
+            </div>
+            <?php endif; ?>
         </form>
     </main>
     <script>

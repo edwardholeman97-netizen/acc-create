@@ -467,6 +467,71 @@ function cse_uploadImages($token, $accountId, array $formData, array $imagePaths
  * @param array $imagePaths Optional. Map of label=>path (e.g. selfie=>uploads/501228/selfie.png) to upload to CSE
  * @return array ['success' => bool, 'message' => string, 'accountId' => string|null]
  */
+/**
+ * Push a pending (DB-only) submission to CSE for the first time.
+ *
+ * Used by:
+ *  - admin/submit-to-cse.php (admin clicks "Approve & Send to CSE")
+ *  - api.php client-resubmit branch (client opens edit link and submits)
+ *
+ * Sends Status=1 (new account) with AccountID=0 so CSE assigns a fresh id.
+ *
+ * @param array $formData Full form data captured at first submission (plus any client edits).
+ * @param array $imagePaths Map of label=>relative path under CSE_STORAGE_PATH.
+ * @return array ['success' => bool, 'message' => string, 'accountId' => string|null]
+ */
+function cse_pushPendingToApi(array $formData, array $imagePaths = []): array {
+    $formData['AccountID'] = 0;
+    $formData['Status'] = '1';
+    if (empty($formData['UserID'])) {
+        $formData['UserID'] = $formData['Email'] ?? cse_generateUserId();
+    }
+    if (empty($formData['ApiRefNo'])) {
+        $formData['ApiRefNo'] = cse_generateReferenceNumber();
+    }
+    if (empty($formData['EnterUser'])) {
+        $formData['EnterUser'] = 'SYSTEM';
+    }
+    if (empty($formData['ClientType'])) {
+        $formData['ClientType'] = 'FI';
+    }
+    if (empty($formData['Residency'])) {
+        $formData['Residency'] = 'R';
+    }
+    if (empty($formData['ApiUser'])) {
+        $formData['ApiUser'] = 'DIALOG';
+    }
+    try {
+        cse_validateRequiredSaveUserFields($formData);
+        $token = cse_getAuthToken();
+        if (!$token) {
+            return ['success' => false, 'message' => 'Authentication failed', 'accountId' => null];
+        }
+        $userData = cse_prepareUserData($formData);
+        $saveResult = cse_saveUserData($token, $userData);
+        $returnedAccountId = $saveResult['accountId'] ?? null;
+        if (!$returnedAccountId) {
+            return [
+                'success' => false,
+                'message' => $saveResult['error'] ?? 'Failed to save to CSE',
+                'accountId' => null,
+            ];
+        }
+        cse_saveSourceFunds($token, $returnedAccountId, $formData);
+        if (!empty($imagePaths)) {
+            cse_uploadImages($token, (int)$returnedAccountId, $formData, $imagePaths);
+        }
+        return [
+            'success' => true,
+            'message' => 'Successfully submitted to CSE',
+            'accountId' => (string)$returnedAccountId,
+        ];
+    } catch (Throwable $e) {
+        cse_liveLog('Push-to-CSE error: ' . $e->getMessage(), 'error');
+        return ['success' => false, 'message' => $e->getMessage(), 'accountId' => null];
+    }
+}
+
 function cse_resubmitToApi(array $formData, string $accountId, array $imagePaths = []): array {
     $formData['AccountID'] = (int)$accountId;
     $formData['Status'] = '4'; // 4 = resubmit per API doc

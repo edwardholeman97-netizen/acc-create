@@ -45,6 +45,29 @@ try {
         }
     }
 
+    // Run any incremental migration files (idempotent: failing statements are skipped
+    // with a warning so re-runs after a partial apply don't crash).
+    $migrationsDir = __DIR__ . '/migrations';
+    if (is_dir($migrationsDir)) {
+        $files = glob($migrationsDir . '/*.sql') ?: [];
+        sort($files);
+        foreach ($files as $file) {
+            echo "Applying migration: " . basename($file) . "\n";
+            $msql = file_get_contents($file);
+            $mstatements = array_filter(
+                array_map('trim', explode(';', preg_replace('/--.*$/m', '', $msql))),
+                fn($s) => $s !== ''
+            );
+            foreach ($mstatements as $mstmt) {
+                try {
+                    $pdo->exec($mstmt);
+                } catch (Throwable $me) {
+                    fwrite(STDERR, "  Skipped (already applied or harmless): " . $me->getMessage() . "\n");
+                }
+            }
+        }
+    }
+
     echo "Migration completed successfully.\n";
 } catch (Throwable $e) {
     fwrite(STDERR, "Migration failed: " . $e->getMessage() . "\n");

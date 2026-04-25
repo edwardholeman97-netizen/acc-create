@@ -43,6 +43,32 @@ function get_form_exp_value_options() {
     ];
 }
 
+/**
+ * Permanently locked field keys.
+ *
+ * These fields are captured ONCE on the very first client submission and can
+ * never be changed afterwards by anyone (admin, client via edit link, or any
+ * other code path). Used by:
+ *  - admin/edit.php (UI render + POST guard)
+ *  - api.php client-resubmit branch (server-side overwrite from DB)
+ *  - lib/cse_api.php cse_resubmitToApi (server-side overwrite from DB)
+ *  - edit-submission.php (UI render)
+ */
+function get_form_locked_field_keys() {
+    return [
+        'MobileNo',
+        'TelphoneNo',
+        'Email',
+        'NicNo',
+        'PassportNo',
+        'InvestorId',
+        'BankAccountNo',
+        'BankCode',
+        'BankBranch',
+        'BankAccountType',
+    ];
+}
+
 /** Source of Funds */
 function get_form_source_of_funds_options() {
     return [
