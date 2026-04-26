@@ -26,6 +26,9 @@ if (!$row) {
 $submissionStatus = $row['status'] ?: 'submitted_to_cse';
 $isLockedSubmission = ($submissionStatus === 'submitted_to_cse');
 $isPendingSubmission = in_array($submissionStatus, ['pending_review', 'awaiting_edit'], true);
+$isSuperadmin = admin_is_super();
+// Superadmins bypass the post-CSE-submission read-only lockdown.
+$effectiveLocked = $isLockedSubmission && !$isSuperadmin;
 
 $formData = json_decode($row['form_data'], true) ?: [];
 $imagePaths = json_decode($row['image_paths'] ?? '{}', true) ?: [];
@@ -130,6 +133,18 @@ $fieldConfig = [
     'Other' => [], // Populated with any keys not in config
 ];
 
+// Superadmins can edit every field, including the ones flagged as `locked`
+// (phone, email, NIC/passport, bank details, investor id, …).
+if ($isSuperadmin) {
+    foreach ($fieldConfig as $section => &$_fields) {
+        foreach ($_fields as &$_f) {
+            unset($_f['locked']);
+        }
+        unset($_f);
+    }
+    unset($_fields);
+}
+
 $usedKeys = [];
 $lockedKeys = [];
 foreach ($fieldConfig as $section => $fields) {
@@ -163,7 +178,7 @@ $sectionIcons = [
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if ($isLockedSubmission) {
+    if ($effectiveLocked) {
         header('Location: dashboard.php?err=' . urlencode('This record has been submitted to CSE and is locked.'));
         exit;
     }
@@ -344,7 +359,7 @@ function renderField($field, $value, $formData = []) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $isLockedSubmission ? 'View' : 'Edit' ?> - <?= htmlspecialchars($displayCseId) ?></title>
+    <title><?= $effectiveLocked ? 'View' : 'Edit' ?> - <?= htmlspecialchars($displayCseId) ?></title>
     <link rel="stylesheet" href="../assets/css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -356,12 +371,13 @@ function renderField($field, $value, $formData = []) {
         .admin-status-banner p { margin: 0; font-size: 13px; line-height: 1.4; }
     </style>
 </head>
-<body class="admin-edit-page<?= $isLockedSubmission ? ' is-readonly' : '' ?>">
+<body class="admin-edit-page<?= $effectiveLocked ? ' is-readonly' : '' ?>">
     <header class="admin-edit-header">
         <h1>
-            <i class="fas <?= $isLockedSubmission ? 'fa-eye' : 'fa-edit' ?>"></i>
-            <?= $isLockedSubmission ? 'View' : 'Edit' ?>
+            <i class="fas <?= $effectiveLocked ? 'fa-eye' : 'fa-edit' ?>"></i>
+            <?= $effectiveLocked ? 'View' : 'Edit' ?>
             Account <?= htmlspecialchars($displayCseId) ?>
+            <?php if ($isSuperadmin): ?><span style="font-size:11px; background:#DD4200; color:#fff; padding:3px 8px; border-radius:999px; vertical-align:middle; margin-left:8px; letter-spacing:0.5px;">SUPERADMIN</span><?php endif; ?>
         </h1>
         <div class="header-actions">
             <a href="dashboard.php" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Dashboard</a>
@@ -377,7 +393,15 @@ function renderField($field, $value, $formData = []) {
             <?php endif; ?>
         </p>
 
-        <?php if ($isLockedSubmission): ?>
+        <?php if ($isLockedSubmission && $isSuperadmin): ?>
+        <div class="admin-status-banner is-pending">
+            <i class="fas fa-triangle-exclamation"></i>
+            <div>
+                <strong>This record was already submitted to CSE</strong>
+                <p>You are editing it as a superadmin. Saving will resubmit the record to CSE via the API and notify the client.</p>
+            </div>
+        </div>
+        <?php elseif ($isLockedSubmission): ?>
         <div class="admin-status-banner is-locked">
             <i class="fas fa-lock"></i>
             <div>
@@ -403,8 +427,9 @@ function renderField($field, $value, $formData = []) {
 
         <?php
         // Defense in depth: when the row is locked, force every field to render locked
-        // and suppress the file-upload + submit controls below.
-        if ($isLockedSubmission) {
+        // and suppress the file-upload + submit controls below. Superadmins bypass
+        // this lockdown (see $effectiveLocked above).
+        if ($effectiveLocked) {
             foreach ($fieldConfig as $sectionTitle => &$_fields) {
                 foreach ($_fields as &$_f) { $_f['locked'] = true; }
                 unset($_f);
@@ -465,7 +490,7 @@ function renderField($field, $value, $formData = []) {
 
             <div class="admin-section">
                 <h2 class="admin-section-title"><i class="fas fa-images"></i> Documents</h2>
-                <?php if (!$isLockedSubmission): ?>
+                <?php if (!$effectiveLocked): ?>
                 <p class="admin-upload-hint">Upload or replace documents (Max 2MB each, JPG/PNG only). New files override existing.</p>
                 <?php endif; ?>
                 <div class="admin-images-upload-grid">
@@ -488,7 +513,7 @@ function renderField($field, $value, $formData = []) {
                             <?php endif; ?>
                         </div>
                         <div class="img-label"><?= htmlspecialchars($info['label']) ?></div>
-                        <?php if (!$isLockedSubmission): ?>
+                        <?php if (!$effectiveLocked): ?>
                         <input type="file" id="<?= htmlspecialchars($info['input']) ?>" name="<?= htmlspecialchars($info['input']) ?>" accept="image/jpeg,image/png">
                         <div class="admin-upload-error" style="display:none;color:#c0392b;font-size:12px;margin-top:4px;"></div>
                         <?php endif; ?>
@@ -497,7 +522,7 @@ function renderField($field, $value, $formData = []) {
                 </div>
             </div>
 
-            <?php if (!$isLockedSubmission): ?>
+            <?php if (!$effectiveLocked): ?>
             <div class="form-actions">
                 <?php if ($isPendingSubmission): ?>
                 <button type="submit" class="btn-save" id="admin-submit-btn"><i class="fas fa-save"></i> Save Draft</button>

@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS `admin_users` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `email` VARCHAR(255) NOT NULL,
     `password_hash` VARCHAR(255) NOT NULL,
+    `role` ENUM('admin','superadmin') NOT NULL DEFAULT 'admin',
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY `uk_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

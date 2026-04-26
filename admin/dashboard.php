@@ -4,6 +4,8 @@ require_once dirname(__DIR__) . '/database/connection.php';
 
 $pdo = getDb();
 
+$isSuperadmin = admin_is_super();
+
 $validStatuses = ['pending_review', 'awaiting_edit', 'submitted_to_cse'];
 $filter = $_GET['status'] ?? 'all';
 if (!in_array($filter, $validStatuses, true) && $filter !== 'all') {
@@ -359,7 +361,7 @@ function status_pill_class($s)
 
 <body>
     <div class="admin-header">
-        <h1>CDS Submissions</h1>
+        <h1>CDS Submissions<?php if ($isSuperadmin): ?> <span style="font-size:11px; background:#DD4200; color:#fff; padding:3px 8px; border-radius:999px; vertical-align:middle; margin-left:8px; letter-spacing:0.5px;">SUPERADMIN</span><?php endif; ?></h1>
         <a href="logout.php">Logout</a>
     </div>
     <div class="admin-content">
@@ -443,6 +445,8 @@ function status_pill_class($s)
                                     data-note="<?= htmlspecialchars($r['admin_note'] ?? '') ?>">
                                     <i class="fas fa-pen-to-square"></i> Request Changes
                                 </button>
+                            <?php elseif ($isSuperadmin): ?>
+                                <a href="edit.php?id=<?= (int)$r['id'] ?>" class="btn-sm btn-secondary"><i class="fas fa-pen"></i> Edit</a>
                             <?php else: ?>
                                 <a href="edit.php?id=<?= (int)$r['id'] ?>" class="btn-sm btn-secondary"><i class="fas fa-eye"></i> View</a>
                             <?php endif; ?>

@@ -26,13 +26,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         try {
             $pdo = getDb();
-            $stmt = $pdo->prepare('SELECT id, email, password_hash FROM admin_users WHERE email = ?');
+            $stmt = $pdo->prepare('SELECT id, email, password_hash, role FROM admin_users WHERE email = ?');
             $stmt->execute([$email]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($user && password_verify($password, $user['password_hash'])) {
                 $_SESSION['admin_id'] = $user['id'];
                 $_SESSION['admin_email'] = $user['email'];
+                $_SESSION['admin_role'] = $user['role'] ?? 'admin';
                 header('Location: dashboard.php');
                 exit;
             }
