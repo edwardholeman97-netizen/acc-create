@@ -51,7 +51,7 @@ function get_email_field_labels() {
         'Title' => 'Title',
         'Initials' => 'Initials',
         'Surname' => 'Surname',
-        'NameDenoInitials' => 'Full Name (Denoted by Initials)',
+        'NameDenoInitials' => 'Name Denoted by Initials',
         'MobileNo' => 'Mobile Number',
         'TelphoneNo' => 'Telephone Number',
         'Email' => 'Email Address',
