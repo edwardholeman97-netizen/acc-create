@@ -77,6 +77,18 @@ if (!in_array($row['status'], ['pending_review', 'awaiting_edit'], true)) {
 $prefill = json_decode($row['form_data'] ?: '[]', true) ?: [];
 $adminNote = trim((string)($row['admin_note'] ?? ''));
 $supportingDocsForClient = supporting_docs_normalize($row['supporting_documents'] ?? null);
+
+// Build a minimal map of which ID images already exist on the server, for the
+// client edit page to show "Currently on file" thumbnails. We expose the
+// filename only — the actual path stays server-side; the file is fetched
+// through the token-gated `view_id_image.php` endpoint by key.
+$existingIdImages = [];
+$rawImagePaths = json_decode($row['image_paths'] ?: '[]', true) ?: [];
+foreach (['selfie', 'nic_front', 'nic_back', 'passport'] as $idKey) {
+    if (!empty($rawImagePaths[$idKey]) && is_string($rawImagePaths[$idKey])) {
+        $existingIdImages[$idKey] = ['name' => basename($rawImagePaths[$idKey])];
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -134,7 +146,8 @@ window.__formConfig = {
     formData: <?= json_encode($prefill, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
     lockedKeys: <?= json_encode(get_form_locked_field_keys()) ?>,
     token: <?= json_encode($rawToken) ?>,
-    supportingDocs: <?= json_encode($supportingDocsForClient, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
+    supportingDocs: <?= json_encode($supportingDocsForClient, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+    existingIdImages: <?= json_encode($existingIdImages, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
 };
 </script>
 <?php include __DIR__ . '/includes/form_scripts.php'; ?>

@@ -16,6 +16,12 @@ use PHPMailer\PHPMailer\Exception as PHPMailerException;
 const EMAIL_EXCLUDE_KEYS = [
     'ApiRefNo', 'EnterDate', 'EnterUser', 'ApiUser', 'ClientType', 'Residency',
     'Status', 'accountId', 'account_id', 'UserID',
+    // Transport-only keys that should never be visible in any client-facing
+    // email. api.php strips these at the parse boundary, but we list them here
+    // as a backstop in case stored DB rows still contain them from before that
+    // fix landed.
+    'step', 'token', 'formData', 'submissionUid', 'supporting_meta',
+    'supporting_remove',
 ];
 
 /** Keys containing these substrings are excluded (e.g. image paths, upload fields) */

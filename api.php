@@ -24,6 +24,14 @@ try {
     $formData = [];
     $step = null;
 
+    // Transport-only keys that travel alongside actual form fields in the request
+    // body. They MUST never leak into $formData beyond this parse step — otherwise
+    // they get persisted to the DB form_data column, pushed to CSE, included in
+    // the client confirmation email, etc. (see incident: token + raw formData JSON
+    // appearing in the registration confirmation email).
+    $transportOnlyKeys = ['step', 'token', 'formData', 'submissionUid',
+                          'supporting_meta', 'supporting_remove'];
+
     $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
     if ($contentType && strpos($contentType, 'multipart/form-data') !== false) {
         liveLog('Request is multipart/form-data');
@@ -38,6 +46,10 @@ try {
                 $formData = array_merge($formData, $decoded);
             }
         }
+        // Drop transport-only keys before any business logic runs.
+        foreach ($transportOnlyKeys as $k) {
+            unset($formData[$k]);
+        }
         if (!isset($formData['UserID'])) {
             $formData['UserID'] = $formData['Email'] ?? generateUserId();
         }
@@ -49,6 +61,11 @@ try {
         }
         $formData = $input['formData'];
         $step = $input['step'] ?? null;
+        // Defensive: even if a JSON client nested transport keys inside formData,
+        // strip them so they cannot reach the DB / email / CSE.
+        foreach ($transportOnlyKeys as $k) {
+            unset($formData[$k]);
+        }
     }
 
     if (empty($formData) && $step !== 'upload') {

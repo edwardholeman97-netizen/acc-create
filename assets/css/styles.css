@@ -396,6 +396,69 @@ textarea:focus {
     gap: 15px;
 }
 
+.existing-id-image {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border: 1px solid #d6e4f0;
+    background: #f0f7fc;
+    border-radius: 8px;
+    transition: opacity 0.2s ease, background 0.2s ease;
+}
+
+.existing-id-image-thumb {
+    flex: 0 0 auto;
+    width: 56px;
+    height: 56px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #c7d6e5;
+    background: #fff;
+    display: block;
+}
+
+.existing-id-image-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.existing-id-image-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    line-height: 1.3;
+    min-width: 0;
+}
+
+.existing-id-image-status {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f6f43;
+}
+
+.existing-id-image-status i {
+    margin-right: 4px;
+}
+
+.existing-id-image-hint {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.existing-id-image.is-replacing {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    opacity: 0.85;
+}
+
+.existing-id-image.is-replacing .existing-id-image-status {
+    color: #b45309;
+}
+
 .preview-item {
     width: 150px;
     text-align: center;

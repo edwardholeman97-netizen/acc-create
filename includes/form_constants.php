@@ -44,15 +44,17 @@ function get_form_exp_value_options() {
 }
 
 /**
- * Permanently locked field keys.
+ * Permanently locked field keys for the CLIENT edit-link flow.
  *
  * These fields are captured ONCE on the very first client submission and can
- * never be changed afterwards by anyone (admin, client via edit link, or any
- * other code path). Used by:
- *  - admin/edit.php (UI render + POST guard)
+ * never be changed by the client via the edit link. Used by:
  *  - api.php client-resubmit branch (server-side overwrite from DB)
- *  - lib/cse_api.php cse_resubmitToApi (server-side overwrite from DB)
- *  - edit-submission.php (UI render)
+ *  - edit-submission.php (UI render — adds lock icon + readonly/disabled)
+ *
+ * Note: admin/edit.php maintains its OWN `locked` flags per field, so the
+ * admin lock policy is independent of this list. Bank details, for example,
+ * are unlocked here (clients can correct them via the edit link) but remain
+ * locked in admin/edit.php by that file's own configuration.
  */
 function get_form_locked_field_keys() {
     return [
@@ -62,10 +64,6 @@ function get_form_locked_field_keys() {
         'NicNo',
         'PassportNo',
         'InvestorId',
-        'BankAccountNo',
-        'BankCode',
-        'BankBranch',
-        'BankAccountType',
     ];
 }
 

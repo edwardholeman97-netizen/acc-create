@@ -360,7 +360,84 @@
                 if (titleEl) titleEl.textContent = 'Resubmitting to CSE';
                 const submitText = document.querySelector('#submit-btn .btn-text');
                 if (submitText) submitText.innerHTML = '<i class="fas fa-paper-plane"></i> Submit to CSE';
+                applyExistingIdImages(cfg);
             }
+        }
+
+        // Show a "Currently on file" thumbnail under each ID file input that
+        // already has an image on the server. Picking a new file dims this
+        // block so the user understands the existing one will be replaced.
+        function applyExistingIdImages(cfg) {
+            const existing = cfg && cfg.existingIdImages;
+            if (!existing || typeof existing !== 'object') return;
+            if (!cfg.token) return;
+            const labelMap = {
+                selfie:    'Selfie',
+                nic_front: 'NIC Front',
+                nic_back:  'NIC Back',
+                passport:  'Passport'
+            };
+            Object.keys(labelMap).forEach(key => {
+                const meta = existing[key];
+                if (!meta) return;
+                const inputId = key + '_upload';
+                const input = document.getElementById(inputId);
+                if (!input) return;
+                const group = input.closest('.form-group');
+                if (!group) return;
+                if (group.querySelector('.existing-id-image')) return;
+
+                const viewUrl = 'view_id_image.php?token=' + encodeURIComponent(cfg.token)
+                    + '&key=' + encodeURIComponent(key);
+
+                const block = document.createElement('div');
+                block.className = 'existing-id-image';
+
+                const thumbLink = document.createElement('a');
+                thumbLink.href = viewUrl;
+                thumbLink.target = '_blank';
+                thumbLink.rel = 'noopener';
+                thumbLink.className = 'existing-id-image-thumb';
+                thumbLink.title = 'Click to view full size';
+                const img = document.createElement('img');
+                img.src = viewUrl;
+                img.alt = (labelMap[key] || key) + ' on file';
+                img.loading = 'lazy';
+                thumbLink.appendChild(img);
+
+                const meta1 = document.createElement('div');
+                meta1.className = 'existing-id-image-meta';
+                const status = document.createElement('span');
+                status.className = 'existing-id-image-status';
+                status.innerHTML = '<i class="fas fa-circle-check"></i> Currently on file';
+                const hint = document.createElement('span');
+                hint.className = 'existing-id-image-hint';
+                hint.textContent = 'Will be kept unless you upload a new file.';
+                meta1.appendChild(status);
+                meta1.appendChild(hint);
+
+                block.appendChild(thumbLink);
+                block.appendChild(meta1);
+
+                const errorEl = group.querySelector('.error-message');
+                if (errorEl) {
+                    group.insertBefore(block, errorEl);
+                } else {
+                    group.appendChild(block);
+                }
+
+                input.addEventListener('change', function() {
+                    if (input.files && input.files[0]) {
+                        block.classList.add('is-replacing');
+                        hint.textContent = 'Will be replaced by the file you just selected.';
+                        status.innerHTML = '<i class="fas fa-rotate"></i> Being replaced';
+                    } else {
+                        block.classList.remove('is-replacing');
+                        hint.textContent = 'Will be kept unless you upload a new file.';
+                        status.innerHTML = '<i class="fas fa-circle-check"></i> Currently on file';
+                    }
+                });
+            });
         }
 
         function applyFormPrefill(data) {
