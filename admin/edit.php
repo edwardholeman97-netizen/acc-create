@@ -54,7 +54,7 @@ $fieldConfig = [
         ['key' => 'Title', 'label' => 'Title', 'type' => 'select', 'options' => $titlesOptions],
         ['key' => 'Initials', 'label' => 'Initials', 'type' => 'text'],
         ['key' => 'Surname', 'label' => 'Surname', 'type' => 'text'],
-        ['key' => 'NameDenoInitials', 'label' => 'Full Name (Denoted by Initials)', 'type' => 'text'],
+        ['key' => 'NameDenoInitials', 'label' => 'Name Denoted by Initials', 'type' => 'text'],
         ['key' => 'MobileNo', 'label' => 'Mobile Number', 'type' => 'tel', 'locked' => true],
         ['key' => 'TelphoneNo', 'label' => 'Telephone Number', 'type' => 'tel', 'locked' => true],
         ['key' => 'Email', 'label' => 'Email Address', 'type' => 'email', 'locked' => true],
