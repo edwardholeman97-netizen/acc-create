@@ -2,6 +2,7 @@
 require_once __DIR__ . '/auth.php';
 require_once dirname(__DIR__) . '/config.php';
 require_once dirname(__DIR__) . '/database/connection.php';
+require_once dirname(__DIR__) . '/lib/supporting_docs.php';
 
 $id = (int)($_GET['id'] ?? 0);
 if (!$id) {
@@ -12,7 +13,7 @@ if (!$id) {
 $pdo = getDb();
 $stmt = $pdo->prepare(
     'SELECT id, submission_uid, account_id, cse_account_id, form_data, image_paths,'
-    . ' status, admin_note, submitted_to_cse_at, created_at, updated_at'
+    . ' supporting_documents, status, admin_note, submitted_to_cse_at, created_at, updated_at'
     . ' FROM cds_submissions WHERE id = ?'
 );
 $stmt->execute([$id]);
@@ -27,11 +28,15 @@ $submissionStatus = $row['status'] ?: 'submitted_to_cse';
 $isLockedSubmission = ($submissionStatus === 'submitted_to_cse');
 $isPendingSubmission = in_array($submissionStatus, ['pending_review', 'awaiting_edit'], true);
 $isSuperadmin = admin_is_super();
+// `?view=1` opens any record in read-only mode, even pending ones, so an admin
+// can inspect a submission (incl. supporting docs) without committing edits.
+$forceViewMode = !empty($_GET['view']);
 // Superadmins bypass the post-CSE-submission read-only lockdown.
-$effectiveLocked = $isLockedSubmission && !$isSuperadmin;
+$effectiveLocked = ($isLockedSubmission && !$isSuperadmin) || $forceViewMode;
 
 $formData = json_decode($row['form_data'], true) ?: [];
 $imagePaths = json_decode($row['image_paths'] ?? '{}', true) ?: [];
+$supportingDocs = supporting_docs_normalize($row['supporting_documents'] ?? null);
 
 // Image folder identifier: prefer submission_uid (new rows), fall back to account_id
 // (legacy rows whose folder was created before the migration).
@@ -179,7 +184,10 @@ $sectionIcons = [
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($effectiveLocked) {
-        header('Location: dashboard.php?err=' . urlencode('This record has been submitted to CSE and is locked.'));
+        $msg = $forceViewMode
+            ? 'You opened this record in view mode. Reopen it via Edit to make changes.'
+            : 'This record has been submitted to CSE and is locked.';
+        header('Location: dashboard.php?err=' . urlencode($msg));
         exit;
     }
 
@@ -228,12 +236,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $imagePaths = array_merge($imagePaths, $newPaths);
     }
 
+    // Apply supporting-doc adds/removes (server-only — never sent to CSE).
+    $supportingMeta = $_POST['supporting_meta'] ?? null;
+    $supportingRemoveIds = isset($_POST['supporting_remove']) && is_array($_POST['supporting_remove'])
+        ? $_POST['supporting_remove'] : [];
+    $supportingDocs = supporting_docs_apply_request(
+        (string)$imageFolderId,
+        $supportingDocs,
+        $supportingMeta,
+        $_FILES,
+        $supportingRemoveIds
+    );
+
     if ($isPendingSubmission) {
         // Pre-CSE state: admin is just cleaning data before approval. DB-only save.
-        $stmt = $pdo->prepare('UPDATE cds_submissions SET form_data = ?, image_paths = ?, updated_at = NOW() WHERE id = ?');
+        $stmt = $pdo->prepare('UPDATE cds_submissions SET form_data = ?, image_paths = ?, supporting_documents = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([
             json_encode($updated, JSON_UNESCAPED_UNICODE),
             json_encode($imagePaths, JSON_UNESCAPED_UNICODE),
+            json_encode($supportingDocs, JSON_UNESCAPED_UNICODE),
             $id,
         ]);
         header('Location: dashboard.php?msg=' . urlencode('Pending submission updated.'));
@@ -249,8 +270,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $stmt = $pdo->prepare('UPDATE cds_submissions SET form_data = ?, image_paths = ?, updated_at = NOW() WHERE id = ?');
-    $stmt->execute([json_encode($updated, JSON_UNESCAPED_UNICODE), json_encode($imagePaths, JSON_UNESCAPED_UNICODE), $id]);
+    $stmt = $pdo->prepare('UPDATE cds_submissions SET form_data = ?, image_paths = ?, supporting_documents = ?, updated_at = NOW() WHERE id = ?');
+    $stmt->execute([
+        json_encode($updated, JSON_UNESCAPED_UNICODE),
+        json_encode($imagePaths, JSON_UNESCAPED_UNICODE),
+        json_encode($supportingDocs, JSON_UNESCAPED_UNICODE),
+        $id,
+    ]);
 
     require_once dirname(__DIR__) . '/lib/email.php';
     try {
@@ -393,6 +419,16 @@ function renderField($field, $value, $formData = []) {
             <?php endif; ?>
         </p>
 
+        <?php if ($forceViewMode && !$isLockedSubmission): ?>
+        <div class="admin-status-banner is-pending">
+            <i class="fas fa-eye"></i>
+            <div>
+                <strong>View mode</strong>
+                <p>You opened this submission read-only. <a href="edit.php?id=<?= (int)$id ?>">Switch to edit mode</a> to make changes.</p>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <?php if ($isLockedSubmission && $isSuperadmin): ?>
         <div class="admin-status-banner is-pending">
             <i class="fas fa-triangle-exclamation"></i>
@@ -507,7 +543,9 @@ function renderField($field, $value, $formData = []) {
                     <div class="admin-image-upload-card">
                         <div class="admin-image-preview">
                             <?php if ($path): ?>
-                            <img src="view_image.php?path=<?= urlencode($path) ?>" alt="<?= htmlspecialchars($info['label']) ?>" loading="lazy" onerror="this.parentElement.innerHTML='<span class=\'no-preview\'>No preview</span>'">
+                            <a href="view_image.php?path=<?= urlencode($path) ?>" target="_blank" rel="noopener" title="Open <?= htmlspecialchars($info['label']) ?> in new tab">
+                                <img src="view_image.php?path=<?= urlencode($path) ?>" alt="<?= htmlspecialchars($info['label']) ?>" loading="lazy" onerror="this.parentElement.parentElement.innerHTML='<span class=\'no-preview\'>No preview</span>'">
+                            </a>
                             <?php else: ?>
                             <span class="no-preview">No image</span>
                             <?php endif; ?>
@@ -520,6 +558,147 @@ function renderField($field, $value, $formData = []) {
                     </div>
                     <?php endforeach; ?>
                 </div>
+            </div>
+
+            <div class="admin-section">
+                <h2 class="admin-section-title"><i class="fas fa-folder-open"></i> Supporting Documents</h2>
+                <p class="admin-upload-hint">
+                    Optional client-supplied documents (utility bills, bank statements, etc.).
+                    These are stored on the server only and are <strong>never sent to CSE</strong>.
+                    PDF/JPG/PNG, max 2MB per file.
+                </p>
+
+                <div id="supporting-docs-grid" class="supporting-docs-grid">
+                    <?php
+                    $sdTypes = get_supporting_doc_types();
+                    $existingByKey = [];
+                    foreach ($supportingDocs['categories'] as $cat) {
+                        $existingByKey[$cat['id']] = $cat;
+                    }
+
+                    foreach ($sdTypes as $sdKey => $sdLabel):
+                        $cat = $existingByKey[$sdKey] ?? null;
+                    ?>
+                    <div class="supporting-doc-card" data-supporting-key="<?= htmlspecialchars($sdKey) ?>" data-supporting-custom="0">
+                        <div class="supporting-doc-card-head">
+                            <div class="supporting-doc-title"><?= htmlspecialchars($sdLabel) ?></div>
+                        </div>
+                        <ul class="supporting-doc-files" data-supporting-files-for="<?= htmlspecialchars($sdKey) ?>">
+                            <?php if ($cat): foreach ($cat['files'] as $f):
+                                $isPdf = ($f['mime'] === 'application/pdf') || preg_match('/\.pdf$/i', $f['name']);
+                                $isImg = !$isPdf && (preg_match('/^image\//i', $f['mime'] ?? '') || preg_match('/\.(jpe?g|png|gif|webp)$/i', $f['name']));
+                                $viewUrl = 'view_document.php?path=' . urlencode($f['path']);
+                            ?>
+                            <li class="supporting-doc-file supporting-doc-file-existing">
+                                <span class="supporting-doc-thumb<?= $isImg ? '' : ' is-icon' ?>">
+                                    <?php if ($isImg): ?>
+                                    <a href="<?= htmlspecialchars($viewUrl) ?>" target="_blank" rel="noopener">
+                                        <img src="<?= htmlspecialchars($viewUrl) ?>" alt="<?= htmlspecialchars($f['name']) ?>" loading="lazy">
+                                    </a>
+                                    <?php else: ?>
+                                    <i class="fas fa-file-pdf"></i>
+                                    <?php endif; ?>
+                                </span>
+                                <span class="supporting-doc-meta">
+                                    <a class="file-name file-name-link" href="<?= htmlspecialchars($viewUrl) ?>" target="_blank" rel="noopener"><?= htmlspecialchars($f['name']) ?></a>
+                                    <span class="file-size"><?= htmlspecialchars(supporting_docs_human_size((int)$f['size'])) ?></span>
+                                </span>
+                                <?php if (!$effectiveLocked): ?>
+                                <label class="file-remove-toggle" title="Mark for removal" style="display:flex;align-items:center;gap:4px;font-size:12px;color:#c0392b;cursor:pointer;">
+                                    <input type="checkbox" name="supporting_remove[]" value="<?= htmlspecialchars($f['id']) ?>"> Remove
+                                </label>
+                                <?php endif; ?>
+                            </li>
+                            <?php endforeach; endif; ?>
+                        </ul>
+                        <?php if (!$effectiveLocked): ?>
+                        <label class="supporting-doc-picker">
+                            <input type="file" multiple accept="application/pdf,image/jpeg,image/png,image/gif,image/webp"
+                                class="supporting-doc-input" data-supporting-key="<?= htmlspecialchars($sdKey) ?>">
+                            <span class="supporting-doc-picker-btn"><i class="fas fa-plus"></i> Add files</span>
+                        </label>
+                        <div class="supporting-doc-error" style="display:none;"></div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endforeach; ?>
+
+                    <?php
+                    foreach ($supportingDocs['categories'] as $cat):
+                        if (!$cat['custom']) continue;
+                    ?>
+                    <div class="supporting-doc-card supporting-doc-card-custom" data-supporting-custom="1" data-supporting-existing-id="<?= htmlspecialchars($cat['id']) ?>">
+                        <div class="supporting-doc-card-head">
+                            <?php if (!$effectiveLocked): ?>
+                            <input type="text" class="supporting-doc-custom-label" data-existing-label="1" value="<?= htmlspecialchars($cat['label']) ?>" maxlength="80">
+                            <?php else: ?>
+                            <div class="supporting-doc-title"><?= htmlspecialchars($cat['label']) ?></div>
+                            <?php endif; ?>
+                        </div>
+                        <ul class="supporting-doc-files">
+                            <?php foreach ($cat['files'] as $f):
+                                $isPdf = ($f['mime'] === 'application/pdf') || preg_match('/\.pdf$/i', $f['name']);
+                                $isImg = !$isPdf && (preg_match('/^image\//i', $f['mime'] ?? '') || preg_match('/\.(jpe?g|png|gif|webp)$/i', $f['name']));
+                                $viewUrl = 'view_document.php?path=' . urlencode($f['path']);
+                            ?>
+                            <li class="supporting-doc-file supporting-doc-file-existing">
+                                <span class="supporting-doc-thumb<?= $isImg ? '' : ' is-icon' ?>">
+                                    <?php if ($isImg): ?>
+                                    <a href="<?= htmlspecialchars($viewUrl) ?>" target="_blank" rel="noopener">
+                                        <img src="<?= htmlspecialchars($viewUrl) ?>" alt="<?= htmlspecialchars($f['name']) ?>" loading="lazy">
+                                    </a>
+                                    <?php else: ?>
+                                    <i class="fas fa-file-pdf"></i>
+                                    <?php endif; ?>
+                                </span>
+                                <span class="supporting-doc-meta">
+                                    <a class="file-name file-name-link" href="<?= htmlspecialchars($viewUrl) ?>" target="_blank" rel="noopener"><?= htmlspecialchars($f['name']) ?></a>
+                                    <span class="file-size"><?= htmlspecialchars(supporting_docs_human_size((int)$f['size'])) ?></span>
+                                </span>
+                                <?php if (!$effectiveLocked): ?>
+                                <label class="file-remove-toggle" title="Mark for removal" style="display:flex;align-items:center;gap:4px;font-size:12px;color:#c0392b;cursor:pointer;">
+                                    <input type="checkbox" name="supporting_remove[]" value="<?= htmlspecialchars($f['id']) ?>"> Remove
+                                </label>
+                                <?php endif; ?>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
+                        <?php if (!$effectiveLocked): ?>
+                        <label class="supporting-doc-picker">
+                            <input type="file" multiple accept="application/pdf,image/jpeg,image/png,image/gif,image/webp"
+                                class="supporting-doc-input">
+                            <span class="supporting-doc-picker-btn"><i class="fas fa-plus"></i> Add files</span>
+                        </label>
+                        <div class="supporting-doc-error" style="display:none;"></div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <?php if (!$effectiveLocked): ?>
+                <div class="supporting-docs-actions">
+                    <button type="button" id="add-custom-supporting-doc" class="btn btn-secondary">
+                        <i class="fas fa-plus-circle"></i> Add Custom Document Type
+                    </button>
+                </div>
+
+                <template id="supporting-doc-custom-template">
+                    <div class="supporting-doc-card supporting-doc-card-custom" data-supporting-custom="1">
+                        <div class="supporting-doc-card-head">
+                            <input type="text" class="supporting-doc-custom-label" placeholder="Document name" maxlength="80">
+                            <button type="button" class="supporting-doc-remove-card" title="Remove this category">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <label class="supporting-doc-picker">
+                            <input type="file" multiple accept="application/pdf,image/jpeg,image/png,image/gif,image/webp"
+                                class="supporting-doc-input">
+                            <span class="supporting-doc-picker-btn"><i class="fas fa-plus"></i> Add files</span>
+                        </label>
+                        <ul class="supporting-doc-files"></ul>
+                        <div class="supporting-doc-error" style="display:none;"></div>
+                    </div>
+                </template>
+                <?php endif; ?>
             </div>
 
             <?php if (!$effectiveLocked): ?>
@@ -594,11 +773,261 @@ function renderField($field, $value, $formData = []) {
                 clearUploadError(card);
                 var fr = new FileReader();
                 fr.onload = function() {
-                    preview.innerHTML = '<img src="' + fr.result + '" alt="Preview">';
+                    preview.innerHTML = '<a href="' + fr.result + '" target="_blank" rel="noopener" title="Open full size">'
+                        + '<img src="' + fr.result + '" alt="Preview">'
+                        + '</a>';
                 };
                 fr.readAsDataURL(this.files[0]);
             });
         });
+
+        // ==================== SUPPORTING DOCUMENTS (admin) ====================
+        // We capture pending picks per card in JS, then on submit build a multipart
+        // FormData with `supporting_meta` + `supporting_<field>[]` arrays, mirroring
+        // exactly what api.php expects. Existing files are managed via the inline
+        // "Remove" checkboxes which post `supporting_remove[]` natively.
+        var SD_MAX_SIZE = 2 * 1024 * 1024;
+        var SD_ALLOWED_EXT = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'];
+        var sdCustomCounter = 0;
+
+        function sdValidate(file) {
+            if (!file || file.size <= 0 || file.size > SD_MAX_SIZE) return 'exceeds 2MB';
+            var dot = file.name.lastIndexOf('.');
+            var ext = dot === -1 ? '' : file.name.slice(dot + 1).toLowerCase();
+            if (SD_ALLOWED_EXT.indexOf(ext) === -1) return 'unsupported file type';
+            return null;
+        }
+
+        function sdShowError(card, msg) {
+            var err = card.querySelector('.supporting-doc-error');
+            if (err) { err.textContent = msg; err.style.display = msg ? 'block' : 'none'; }
+        }
+
+        function sdHumanSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+        }
+
+        function sdIsImage(name, mime) {
+            if (mime && /^image\//i.test(mime)) return true;
+            return /\.(jpe?g|png|gif|webp)$/i.test(name || '');
+        }
+
+        function sdRenderPending(card) {
+            var ul = card.querySelector('.supporting-doc-files');
+            if (!ul) return;
+            // Drop existing pending nodes (and revoke their blob URLs); keep server-side ones.
+            ul.querySelectorAll('.supporting-doc-file-pending').forEach(function(n) {
+                n.querySelectorAll('img[src^="blob:"], a[href^="blob:"]').forEach(function(el) {
+                    var u = el.src || el.href;
+                    if (u) { try { URL.revokeObjectURL(u); } catch (e) {} }
+                });
+                n.remove();
+            });
+            var pending = card.__sdPending || [];
+            pending.forEach(function(file, idx) {
+                var li = document.createElement('li');
+                li.className = 'supporting-doc-file supporting-doc-file-pending';
+                var isImg = sdIsImage(file.name, file.type);
+
+                var thumb = document.createElement('span');
+                thumb.className = 'supporting-doc-thumb' + (isImg ? '' : ' is-icon');
+                var blobUrl = '';
+                try { blobUrl = URL.createObjectURL(file); } catch (e) {}
+                if (isImg && blobUrl) {
+                    var img = document.createElement('img');
+                    img.alt = file.name;
+                    img.src = blobUrl;
+                    thumb.appendChild(img);
+                } else {
+                    var ic = document.createElement('i');
+                    ic.className = 'fas fa-file-pdf';
+                    thumb.appendChild(ic);
+                }
+
+                var meta = document.createElement('span');
+                meta.className = 'supporting-doc-meta';
+                var nameEl;
+                if (blobUrl) {
+                    nameEl = document.createElement('a');
+                    nameEl.href = blobUrl;
+                    nameEl.target = '_blank';
+                    nameEl.rel = 'noopener';
+                    nameEl.className = 'file-name file-name-link';
+                } else {
+                    nameEl = document.createElement('span');
+                    nameEl.className = 'file-name';
+                }
+                nameEl.textContent = file.name;
+                var sizeEl = document.createElement('span');
+                sizeEl.className = 'file-size';
+                sizeEl.textContent = sdHumanSize(file.size);
+                meta.appendChild(nameEl);
+                meta.appendChild(sizeEl);
+
+                var rm = document.createElement('button');
+                rm.type = 'button';
+                rm.className = 'file-remove';
+                rm.title = 'Remove';
+                rm.innerHTML = '<i class="fas fa-times"></i>';
+                rm.addEventListener('click', function() {
+                    if (blobUrl) { try { URL.revokeObjectURL(blobUrl); } catch (e) {} }
+                    pending.splice(idx, 1);
+                    sdRenderPending(card);
+                });
+
+                li.appendChild(thumb);
+                li.appendChild(meta);
+                li.appendChild(rm);
+                ul.appendChild(li);
+            });
+        }
+
+        function sdAttachFileInput(card) {
+            var input = card.querySelector('.supporting-doc-input');
+            if (!input || input.__sdBound) return;
+            input.__sdBound = true;
+            card.__sdPending = card.__sdPending || [];
+            input.addEventListener('change', function() {
+                sdShowError(card, '');
+                var errors = [];
+                for (var i = 0; i < this.files.length; i++) {
+                    var f = this.files[i];
+                    var msg = sdValidate(f);
+                    if (msg) { errors.push(f.name + ': ' + msg); continue; }
+                    if (card.__sdPending.some(function(p) { return p.name === f.name && p.size === f.size; })) continue;
+                    card.__sdPending.push(f);
+                }
+                this.value = '';
+                sdRenderPending(card);
+                if (errors.length) sdShowError(card, errors.join('. '));
+            });
+        }
+
+        document.querySelectorAll('#supporting-docs-grid .supporting-doc-card').forEach(sdAttachFileInput);
+
+        var sdAddBtn = document.getElementById('add-custom-supporting-doc');
+        if (sdAddBtn) {
+            sdAddBtn.addEventListener('click', function() {
+                var tpl = document.getElementById('supporting-doc-custom-template');
+                var grid = document.getElementById('supporting-docs-grid');
+                if (!tpl || !grid) return;
+                var node = tpl.content.firstElementChild.cloneNode(true);
+                grid.appendChild(node);
+                sdAttachFileInput(node);
+                var removeBtn = node.querySelector('.supporting-doc-remove-card');
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', function() { node.remove(); });
+                }
+                var labelInput = node.querySelector('.supporting-doc-custom-label');
+                if (labelInput) labelInput.focus();
+            });
+        }
+
+        // On submit: hijack the natural submit, build a FormData, post via fetch
+        // so we can attach pending files keyed by the manifest. Existing remove
+        // checkboxes are still picked up because we copy all native form fields.
+        function sdBuildAndSubmit(originalEvent) {
+            if (!form || form.__sdSubmitting) return;
+            // Skip when the form has no supporting-docs section (defensive).
+            if (!document.getElementById('supporting-docs-grid')) return;
+
+            originalEvent.preventDefault();
+            form.__sdSubmitting = true;
+
+            // Validate custom labels for any card that has either pending files
+            // or existing files.
+            var labelOk = true;
+            document.querySelectorAll('#supporting-docs-grid .supporting-doc-card-custom').forEach(function(card) {
+                var labelInput = card.querySelector('.supporting-doc-custom-label');
+                var hasPending = (card.__sdPending || []).length > 0;
+                var hasExisting = card.querySelectorAll('.supporting-doc-file-existing').length > 0;
+                if ((hasPending || hasExisting) && labelInput && !labelInput.value.trim()) {
+                    sdShowError(card, 'Please enter a name for this document type.');
+                    if (labelOk) labelInput.focus();
+                    labelOk = false;
+                }
+            });
+            if (!labelOk) {
+                form.__sdSubmitting = false;
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('btn-loading');
+                }
+                return;
+            }
+
+            var fd = new FormData(form);
+
+            // Build supporting_meta + append pending files.
+            var meta = [];
+            document.querySelectorAll('#supporting-docs-grid .supporting-doc-card').forEach(function(card, idx) {
+                var pending = card.__sdPending || [];
+                if (!pending.length) return;
+                var isCustom = card.dataset.supportingCustom === '1';
+                var fieldName, entry;
+                if (isCustom) {
+                    var labelInput = card.querySelector('.supporting-doc-custom-label');
+                    var label = (labelInput && labelInput.value || '').trim();
+                    if (!label) return;
+                    fieldName = 'supporting_custom_' + idx + '_' + Date.now();
+                    entry = { id: card.dataset.supportingExistingId || '', label: label, custom: true, field: fieldName };
+                } else {
+                    var key = card.dataset.supportingKey;
+                    if (!key) return;
+                    fieldName = 'supporting_' + key;
+                    entry = { id: key, label: '', custom: false, field: fieldName };
+                }
+                meta.push(entry);
+                pending.forEach(function(f) { fd.append(fieldName + '[]', f, f.name); });
+            });
+            // Also propagate any existing custom-card label edits even when no
+            // new files are added — we send a meta entry without files so the
+            // server can reach the merge branch (it just won't upload anything,
+            // but a future enhancement could let the user rename).
+            if (meta.length) fd.append('supporting_meta', JSON.stringify(meta));
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+                submitBtn.classList.add('btn-loading');
+            }
+
+            fetch(form.action || window.location.href, {
+                method: 'POST',
+                body: fd,
+                redirect: 'follow'
+            }).then(function(resp) {
+                if (resp.redirected) {
+                    window.location.href = resp.url;
+                } else {
+                    return resp.text().then(function(text) {
+                        document.open();
+                        document.write(text);
+                        document.close();
+                    });
+                }
+            }).catch(function(err) {
+                form.__sdSubmitting = false;
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('btn-loading');
+                }
+                alert('Submission failed: ' + err.message);
+            });
+        }
+
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                if (form.__sdSubmitting) return;
+                // The earlier-registered handler already validated ID-image picks
+                // and either preventDefault'd (on error) or flipped submitBtn into
+                // loading mode (on success). We only want to take over on success.
+                if (e.defaultPrevented) return;
+                sdBuildAndSubmit(e);
+            });
+        }
 
         // Conditional field toggles (same logic as main form)
         function getVal(idOrName, isRadio) {

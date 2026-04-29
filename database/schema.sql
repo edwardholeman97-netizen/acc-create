@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS `cds_submissions` (
     `cse_account_id` VARCHAR(20) DEFAULT NULL,
     `form_data` JSON NOT NULL,
     `image_paths` JSON DEFAULT NULL,
+    `supporting_documents` JSON DEFAULT NULL,
     `status` ENUM('pending_review','awaiting_edit','submitted_to_cse') NOT NULL DEFAULT 'pending_review',
     `admin_note` TEXT DEFAULT NULL,
     `submitted_to_cse_at` DATETIME DEFAULT NULL,

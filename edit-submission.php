@@ -2,6 +2,7 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/database/connection.php';
 require_once __DIR__ . '/includes/form_constants.php';
+require_once __DIR__ . '/lib/supporting_docs.php';
 
 /**
  * Public client edit page. Validates a 3-day token, then renders the same
@@ -55,7 +56,7 @@ $tokenHash = hash('sha256', $rawToken);
 $stmt = $pdo->prepare(
     'SELECT t.id, t.expires_at,'
     . ' s.id AS submission_id, s.submission_uid, s.form_data, s.image_paths,'
-    . ' s.status, s.admin_note'
+    . ' s.supporting_documents, s.status, s.admin_note'
     . ' FROM submission_edit_tokens t'
     . ' INNER JOIN cds_submissions s ON s.id = t.submission_id'
     . ' WHERE t.token_hash = ? LIMIT 1'
@@ -75,6 +76,7 @@ if (!in_array($row['status'], ['pending_review', 'awaiting_edit'], true)) {
 
 $prefill = json_decode($row['form_data'] ?: '[]', true) ?: [];
 $adminNote = trim((string)($row['admin_note'] ?? ''));
+$supportingDocsForClient = supporting_docs_normalize($row['supporting_documents'] ?? null);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -131,7 +133,8 @@ window.__formConfig = {
     mode: 'resubmit',
     formData: <?= json_encode($prefill, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
     lockedKeys: <?= json_encode(get_form_locked_field_keys()) ?>,
-    token: <?= json_encode($rawToken) ?>
+    token: <?= json_encode($rawToken) ?>,
+    supportingDocs: <?= json_encode($supportingDocsForClient, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>
 };
 </script>
 <?php include __DIR__ . '/includes/form_scripts.php'; ?>

@@ -773,6 +773,56 @@
                             <div class="preview-container" id="image-previews"></div>
                         </div>
                     </div>
+
+                    <!-- Supporting Documents (Optional) -->
+                    <div class="form-section">
+                        <h2 class="section-title"><i class="fas fa-folder-open"></i> Supporting Documents <span class="optional-tag">(Optional)</span></h2>
+                        <p class="supporting-docs-help">
+                            Upload any of the following documents if available. Multiple files allowed per category.
+                            Accepted formats: <strong>PDF, JPG, PNG</strong>. Max <strong>2MB</strong> per file.
+                        </p>
+
+                        <div id="supporting-docs-grid" class="supporting-docs-grid">
+                            <?php foreach (get_supporting_doc_types() as $sdKey => $sdLabel): ?>
+                            <div class="supporting-doc-card" data-supporting-key="<?= htmlspecialchars($sdKey) ?>" data-supporting-custom="0">
+                                <div class="supporting-doc-card-head">
+                                    <div class="supporting-doc-title"><?= htmlspecialchars($sdLabel) ?></div>
+                                </div>
+                                <label class="supporting-doc-picker">
+                                    <input type="file" multiple accept="application/pdf,image/jpeg,image/png,image/gif,image/webp"
+                                        class="supporting-doc-input" data-supporting-key="<?= htmlspecialchars($sdKey) ?>">
+                                    <span class="supporting-doc-picker-btn"><i class="fas fa-plus"></i> Add files</span>
+                                </label>
+                                <ul class="supporting-doc-files" data-supporting-files-for="<?= htmlspecialchars($sdKey) ?>"></ul>
+                                <div class="supporting-doc-error" style="display:none;"></div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <div class="supporting-docs-actions">
+                            <button type="button" id="add-custom-supporting-doc" class="btn btn-secondary">
+                                <i class="fas fa-plus-circle"></i> Add Custom Document Type
+                            </button>
+                        </div>
+
+                        <template id="supporting-doc-custom-template">
+                            <div class="supporting-doc-card supporting-doc-card-custom" data-supporting-custom="1">
+                                <div class="supporting-doc-card-head">
+                                    <input type="text" class="supporting-doc-custom-label" placeholder="Document name (e.g. Marriage Certificate)" maxlength="80" required>
+                                    <button type="button" class="supporting-doc-remove-card" title="Remove this category">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <label class="supporting-doc-picker">
+                                    <input type="file" multiple accept="application/pdf,image/jpeg,image/png,image/gif,image/webp"
+                                        class="supporting-doc-input">
+                                    <span class="supporting-doc-picker-btn"><i class="fas fa-plus"></i> Add files</span>
+                                </label>
+                                <ul class="supporting-doc-files"></ul>
+                                <div class="supporting-doc-error" style="display:none;"></div>
+                            </div>
+                        </template>
+                    </div>
                 </div>
             </div>
 

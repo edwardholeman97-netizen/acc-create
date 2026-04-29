@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/auth.php';
 require_once dirname(__DIR__) . '/database/connection.php';
+require_once dirname(__DIR__) . '/lib/supporting_docs.php';
 
 $pdo = getDb();
 
@@ -15,13 +16,13 @@ if (!in_array($filter, $validStatuses, true) && $filter !== 'all') {
 if ($filter === 'all') {
     $stmt = $pdo->query(
         'SELECT id, submission_uid, account_id, cse_account_id, form_data,'
-            . ' status, admin_note, submitted_to_cse_at, created_at'
+            . ' supporting_documents, status, admin_note, submitted_to_cse_at, created_at'
             . ' FROM cds_submissions ORDER BY created_at DESC'
     );
 } else {
     $stmt = $pdo->prepare(
         'SELECT id, submission_uid, account_id, cse_account_id, form_data,'
-            . ' status, admin_note, submitted_to_cse_at, created_at'
+            . ' supporting_documents, status, admin_note, submitted_to_cse_at, created_at'
             . ' FROM cds_submissions WHERE status = ? ORDER BY created_at DESC'
     );
     $stmt->execute([$filter]);
@@ -207,6 +208,14 @@ function status_pill_class($s)
         .pill-submitted {
             background: #DCFCE7;
             color: #166534;
+        }
+
+        .pill-docs {
+            background: #EEF2FF;
+            color: #3730A3;
+            margin-left: 6px;
+            font-size: 11px;
+            padding: 2px 8px;
         }
 
         .btn-sm {
@@ -413,6 +422,7 @@ function status_pill_class($s)
                     $isSubmitted = ($status === 'submitted_to_cse');
                     $isPending = in_array($status, ['pending_review', 'awaiting_edit'], true);
                     $clientName = $name ?: '-';
+                    $supportingCount = supporting_docs_count(supporting_docs_normalize($r['supporting_documents'] ?? null));
                 ?>
                     <tr>
                         <td><input type="checkbox" class="bulk-checkbox" value="<?= (int)$r['id'] ?>"></td>
@@ -427,11 +437,19 @@ function status_pill_class($s)
                                 <small style="color:#9ca3af;">—</small>
                             <?php endif; ?>
                         </td>
-                        <td class="truncate" title="<?= htmlspecialchars($clientName) ?>"><?= htmlspecialchars($clientName) ?></td>
+                        <td class="truncate" title="<?= htmlspecialchars($clientName) ?>">
+                            <?= htmlspecialchars($clientName) ?>
+                            <?php if ($supportingCount > 0): ?>
+                                <span class="pill pill-docs" title="<?= (int)$supportingCount ?> supporting document<?= $supportingCount === 1 ? '' : 's' ?>">
+                                    <i class="fas fa-paperclip"></i> <?= (int)$supportingCount ?>
+                                </span>
+                            <?php endif; ?>
+                        </td>
                         <td class="truncate" title="<?= htmlspecialchars($email) ?>"><?= htmlspecialchars($email) ?></td>
                         <td class="truncate" title="<?= htmlspecialchars($r['created_at']) ?>"><?= htmlspecialchars($r['created_at']) ?></td>
                         <td class="actions">
                             <?php if ($isPending): ?>
+                                <a href="edit.php?id=<?= (int)$r['id'] ?>&view=1" class="btn-sm btn-secondary"><i class="fas fa-eye"></i> View</a>
                                 <a href="edit.php?id=<?= (int)$r['id'] ?>" class="btn-sm btn-secondary"><i class="fas fa-pen"></i> Edit</a>
                                 <form method="post" action="submit-to-cse.php" style="display:inline" class="approve-form" data-name="<?= htmlspecialchars($clientName) ?>">
                                     <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">

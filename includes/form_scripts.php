@@ -18,8 +18,335 @@
             setupConditionalFields();
             setupDateDefaults();
             updateProgressBar();
+            initSupportingDocs();
             applyResubmitMode();
         });
+
+        // ==================== SUPPORTING DOCUMENTS ====================
+        // Optional client-supplied docs (utility bills, bank statements, custom
+        // categories, etc.). Stored on our server only — never pushed to CSE.
+        const SUPPORTING_DOC_MAX_SIZE = 2 * 1024 * 1024; // 2MB
+        const SUPPORTING_DOC_ALLOWED_EXT = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'webp'];
+        // Each predefined entry: { existing: [{id,name,size,mime,path}], pending: [File] }
+        const supportingDocs = { predefined: {}, custom: [] };
+        const supportingRemoveIds = [];
+        let customSupportingCounter = 0;
+
+        function initSupportingDocs() {
+            const grid = document.getElementById('supporting-docs-grid');
+            if (!grid) return;
+
+            grid.querySelectorAll('.supporting-doc-card').forEach(card => {
+                const key = card.getAttribute('data-supporting-key');
+                if (!key) return;
+                supportingDocs.predefined[key] = supportingDocs.predefined[key] || { existing: [], pending: [] };
+                const input = card.querySelector('.supporting-doc-input');
+                if (input) {
+                    input.addEventListener('change', function() {
+                        addSupportingFiles(card, supportingDocs.predefined[key], this.files);
+                        this.value = '';
+                    });
+                }
+            });
+
+            const addBtn = document.getElementById('add-custom-supporting-doc');
+            if (addBtn) {
+                addBtn.addEventListener('click', function() {
+                    addCustomSupportingCard();
+                });
+            }
+
+            // Hydrate from window.__formConfig.supportingDocs (resubmit flow only).
+            const cfg = window.__formConfig || {};
+            if (cfg.supportingDocs && Array.isArray(cfg.supportingDocs.categories)) {
+                cfg.supportingDocs.categories.forEach(cat => {
+                    if (!cat.custom) {
+                        const entry = supportingDocs.predefined[cat.id];
+                        const card = grid.querySelector('.supporting-doc-card[data-supporting-key="' + cssEscape(cat.id) + '"]');
+                        if (entry && card) {
+                            entry.existing = (cat.files || []).map(f => Object.assign({}, f));
+                            renderSupportingCard(card, entry);
+                        }
+                    } else {
+                        const card = addCustomSupportingCard(cat.label || 'Other Document', cat.id || '');
+                        if (card) {
+                            const entry = supportingDocs.custom.find(c => c.localId === card.dataset.customLocalId);
+                            if (entry) {
+                                entry.serverId = cat.id || '';
+                                entry.existing = (cat.files || []).map(f => Object.assign({}, f));
+                                renderSupportingCard(card, entry);
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Expose remove-ids list to the resubmit flow.
+            window.__supportingRemoveIds = supportingRemoveIds;
+        }
+
+        function addCustomSupportingCard(initialLabel, serverId) {
+            const tpl = document.getElementById('supporting-doc-custom-template');
+            const grid = document.getElementById('supporting-docs-grid');
+            if (!tpl || !grid) return null;
+            const node = tpl.content.firstElementChild.cloneNode(true);
+            const localIdx = customSupportingCounter++;
+            const customEntry = {
+                localId: 'custom_' + Date.now() + '_' + localIdx,
+                label: initialLabel || '',
+                serverId: serverId || '',
+                existing: [],
+                pending: []
+            };
+            supportingDocs.custom.push(customEntry);
+            node.dataset.customLocalId = customEntry.localId;
+
+            const labelInput = node.querySelector('.supporting-doc-custom-label');
+            if (labelInput) {
+                if (initialLabel) labelInput.value = initialLabel;
+                labelInput.addEventListener('input', function() {
+                    customEntry.label = this.value;
+                    clearCardError(node);
+                });
+            }
+            const fileInput = node.querySelector('.supporting-doc-input');
+            if (fileInput) {
+                fileInput.addEventListener('change', function() {
+                    addSupportingFiles(node, customEntry, this.files);
+                    this.value = '';
+                });
+            }
+            const removeBtn = node.querySelector('.supporting-doc-remove-card');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function() {
+                    // Mark all existing files for deletion then drop the card.
+                    customEntry.existing.forEach(f => { if (f.id) supportingRemoveIds.push(f.id); });
+                    const idx = supportingDocs.custom.findIndex(c => c.localId === customEntry.localId);
+                    if (idx !== -1) supportingDocs.custom.splice(idx, 1);
+                    node.remove();
+                });
+            }
+            grid.appendChild(node);
+            if (labelInput && !initialLabel) labelInput.focus();
+            return node;
+        }
+
+        function addSupportingFiles(card, entry, fileList) {
+            if (!fileList || !fileList.length) return;
+            clearCardError(card);
+            const errors = [];
+            for (let i = 0; i < fileList.length; i++) {
+                const file = fileList[i];
+                const errMsg = validateSupportingFile(file);
+                if (errMsg) {
+                    errors.push(file.name + ': ' + errMsg);
+                    continue;
+                }
+                if (entry.pending.some(f => f.name === file.name && f.size === file.size)) continue;
+                entry.pending.push(file);
+            }
+            renderSupportingCard(card, entry);
+            if (errors.length) showCardError(card, errors.join('. '));
+        }
+
+        function validateSupportingFile(file) {
+            if (file.size <= 0 || file.size > SUPPORTING_DOC_MAX_SIZE) return 'exceeds 2MB';
+            const dot = file.name.lastIndexOf('.');
+            const ext = (dot === -1) ? '' : file.name.slice(dot + 1).toLowerCase();
+            if (!SUPPORTING_DOC_ALLOWED_EXT.includes(ext)) return 'unsupported file type';
+            return null;
+        }
+
+        // Cache of object URLs created for pending File previews so we can revoke them on re-render.
+        const supportingPendingUrls = new WeakMap();
+
+        function isImageDoc(nameOrMime) {
+            if (!nameOrMime) return false;
+            if (/^image\//i.test(nameOrMime)) return true;
+            return /\.(jpe?g|png|gif|webp)$/i.test(nameOrMime);
+        }
+
+        function buildExistingDocUrl(file) {
+            // Resubmit flow: route through the public token-gated viewer.
+            const cfg = window.__formConfig || {};
+            if (cfg.mode === 'resubmit' && cfg.token && file && file.id) {
+                return 'view_supporting.php?token=' + encodeURIComponent(cfg.token)
+                    + '&fid=' + encodeURIComponent(file.id);
+            }
+            return '';
+        }
+
+        function buildSupportingFileItem(file, opts) {
+            // opts: { existing: bool, onRemove: fn, viewUrl: string|null }
+            const li = document.createElement('li');
+            li.className = 'supporting-doc-file' + (opts.existing ? ' supporting-doc-file-existing' : '');
+
+            const fileName = file.name || 'document';
+            const fileSize = humanFileSize(file.size || 0);
+            const mime = file.mime || file.type || '';
+            const isImg = isImageDoc(mime) || isImageDoc(fileName);
+
+            // Thumbnail (image preview) or icon
+            const thumb = document.createElement('span');
+            thumb.className = 'supporting-doc-thumb' + (isImg ? '' : ' is-icon');
+            if (isImg) {
+                const img = document.createElement('img');
+                img.alt = fileName;
+                img.loading = 'lazy';
+                if (opts.existing && opts.viewUrl) {
+                    img.src = opts.viewUrl;
+                } else if (file instanceof Blob) {
+                    try {
+                        const u = URL.createObjectURL(file);
+                        supportingPendingUrls.set(file, u);
+                        img.src = u;
+                    } catch (e) { /* ignore */ }
+                }
+                thumb.appendChild(img);
+            } else {
+                const i = document.createElement('i');
+                i.className = 'fas fa-file-pdf';
+                thumb.appendChild(i);
+            }
+
+            // Filename — clickable when we have a URL.
+            const nameWrap = document.createElement('span');
+            nameWrap.className = 'supporting-doc-meta';
+            let nameEl;
+            const linkHref = opts.existing
+                ? (opts.viewUrl || '')
+                : (file instanceof Blob ? (URL.createObjectURL(file)) : '');
+            if (linkHref) {
+                nameEl = document.createElement('a');
+                nameEl.href = linkHref;
+                nameEl.target = '_blank';
+                nameEl.rel = 'noopener';
+                nameEl.className = 'file-name file-name-link';
+                if (!opts.existing) supportingPendingUrls.set(file, linkHref);
+            } else {
+                nameEl = document.createElement('span');
+                nameEl.className = 'file-name';
+            }
+            nameEl.textContent = fileName;
+            const sizeEl = document.createElement('span');
+            sizeEl.className = 'file-size';
+            sizeEl.textContent = fileSize;
+            nameWrap.appendChild(nameEl);
+            nameWrap.appendChild(sizeEl);
+
+            const rmBtn = document.createElement('button');
+            rmBtn.type = 'button';
+            rmBtn.className = 'file-remove';
+            rmBtn.title = 'Remove';
+            rmBtn.innerHTML = '<i class="fas fa-times"></i>';
+            rmBtn.addEventListener('click', opts.onRemove);
+
+            li.appendChild(thumb);
+            li.appendChild(nameWrap);
+            li.appendChild(rmBtn);
+            return li;
+        }
+
+        function renderSupportingCard(card, entry) {
+            const ul = card.querySelector('.supporting-doc-files');
+            if (!ul) return;
+            // Revoke any previous blob URLs we created for pending files in this card.
+            ul.querySelectorAll('img[src^="blob:"], a[href^="blob:"]').forEach(el => {
+                const u = el.src || el.href;
+                if (u) { try { URL.revokeObjectURL(u); } catch (e) {} }
+            });
+            ul.innerHTML = '';
+
+            // Existing (already on server) — clickable via token-gated viewer (resubmit flow).
+            entry.existing.forEach((file, idx) => {
+                const li = buildSupportingFileItem(file, {
+                    existing: true,
+                    viewUrl: buildExistingDocUrl(file),
+                    onRemove: function() {
+                        if (file.id) supportingRemoveIds.push(file.id);
+                        entry.existing.splice(idx, 1);
+                        renderSupportingCard(card, entry);
+                    }
+                });
+                ul.appendChild(li);
+            });
+
+            // Pending (newly picked, in memory) — preview via blob URL.
+            entry.pending.forEach((file, idx) => {
+                const li = buildSupportingFileItem(file, {
+                    existing: false,
+                    onRemove: function() {
+                        const u = supportingPendingUrls.get(file);
+                        if (u) { try { URL.revokeObjectURL(u); } catch (e) {} }
+                        entry.pending.splice(idx, 1);
+                        renderSupportingCard(card, entry);
+                    }
+                });
+                ul.appendChild(li);
+            });
+        }
+
+        function humanFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+        }
+
+        function showCardError(card, msg) {
+            const el = card.querySelector('.supporting-doc-error');
+            if (el) { el.textContent = msg; el.style.display = 'block'; }
+        }
+
+        function clearCardError(card) {
+            const el = card.querySelector('.supporting-doc-error');
+            if (el) { el.textContent = ''; el.style.display = 'none'; }
+        }
+
+        // Append all in-memory NEW supporting files (+ a JSON manifest) onto a
+        // FormData. Existing server-side files are not re-uploaded; removals
+        // travel separately via window.__supportingRemoveIds.
+        function appendSupportingDocsToFormData(fd) {
+            const meta = [];
+
+            Object.keys(supportingDocs.predefined).forEach(key => {
+                const entry = supportingDocs.predefined[key];
+                if (!entry || !entry.pending.length) return;
+                const fieldName = 'supporting_' + key;
+                meta.push({ id: key, label: '', custom: false, field: fieldName });
+                entry.pending.forEach(f => fd.append(fieldName + '[]', f, f.name));
+            });
+
+            supportingDocs.custom.forEach((entry, idx) => {
+                if (!entry.pending.length) return;
+                const label = (entry.label || '').trim();
+                if (!label) return;
+                const fieldName = 'supporting_custom_' + idx + '_' + Date.now();
+                meta.push({ id: entry.serverId || '', label: label, custom: true, field: fieldName });
+                entry.pending.forEach(f => fd.append(fieldName + '[]', f, f.name));
+            });
+
+            if (meta.length) {
+                fd.append('supporting_meta', JSON.stringify(meta));
+                return true;
+            }
+            return false;
+        }
+
+        function validateCustomSupportingLabels() {
+            let ok = true;
+            document.querySelectorAll('#supporting-docs-grid .supporting-doc-card-custom').forEach(card => {
+                const localId = card.dataset.customLocalId;
+                const entry = supportingDocs.custom.find(c => c.localId === localId);
+                if (!entry) return;
+                if ((entry.pending.length || entry.existing.length) && !(entry.label || '').trim()) {
+                    showCardError(card, 'Please enter a name for this document type.');
+                    const inp = card.querySelector('.supporting-doc-custom-label');
+                    if (inp) inp.focus();
+                    ok = false;
+                }
+            });
+            return ok;
+        }
 
         // ==================== RESUBMIT MODE ====================
         function applyResubmitMode() {
@@ -529,6 +856,7 @@
         function submitForm() {
             if (isSubmitting) return;
             if (!validateCurrentStep()) return;
+            if (!validateCustomSupportingLabels()) return;
             isSubmitting = true;
 
             const cfg = window.__formConfig;
@@ -578,6 +906,8 @@
                         hasFiles = true;
                     }
                 }
+                const hasSupporting = appendSupportingDocsToFormData(uploadFormData);
+                hasFiles = hasFiles || hasSupporting;
 
                 const finishMsg = 'Submitted for review. We will email you once approved or if changes are required.';
 
@@ -628,6 +958,9 @@
                     fd.append(name, input.files[0]);
                 }
             }
+            appendSupportingDocsToFormData(fd);
+            // Apply any per-file removals captured by the client edit-link flow.
+            (window.__supportingRemoveIds || []).forEach(id => fd.append('supporting_remove[]', id));
 
             fetch('api.php', { method: 'POST', body: fd })
                 .then(r => r.json())
@@ -1008,9 +1341,12 @@
                     'passport_upload': 'Passport'
                 };
 
+                const _label = imageTypeMap[input.id] || 'Document';
                 previewDiv.innerHTML = `
-            <img src="${e.target.result}" class="preview-img" alt="${imageTypeMap[input.id] || 'Document'}">
-            <p>${imageTypeMap[input.id] || 'Document'}</p>
+            <a href="${e.target.result}" target="_blank" rel="noopener" title="Open full size" class="preview-img-link">
+                <img src="${e.target.result}" class="preview-img" alt="${_label}">
+            </a>
+            <p>${_label}</p>
             <button type="button" onclick="removeImage('${input.id}', '${previewId}')" style="background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-top: 5px;">
                 <i class="fas fa-times"></i> Remove
             </button>

@@ -4,6 +4,7 @@ require_once __DIR__ . '/database/connection.php';
 require_once __DIR__ . '/includes/form_constants.php';
 require_once __DIR__ . '/lib/cse_api.php';
 require_once __DIR__ . '/lib/email.php';
+require_once __DIR__ . '/lib/supporting_docs.php';
 
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: ' . (CORS_ALLOW_ORIGIN ?: '*'));
@@ -71,10 +72,27 @@ try {
         $imagePaths = saveImagesToStorageByUid($submissionUid);
         updateSubmissionImagesByUid($submissionUid, $imagePaths);
 
+        // Supporting docs (PDFs/images, custom categories) — server-only, never
+        // sent to CSE. cse_uploadImages() iterates a hardcoded whitelist of the
+        // 4 ID keys on `image_paths`, so this column is safe by construction.
+        $existingSupporting = loadSubmissionSupportingDocsByUid($submissionUid);
+        $supportingMeta = $_POST['supporting_meta'] ?? null;
+        $removeIds = isset($_POST['supporting_remove']) && is_array($_POST['supporting_remove'])
+            ? $_POST['supporting_remove'] : [];
+        $supportingDocs = supporting_docs_apply_request(
+            $submissionUid,
+            $existingSupporting,
+            $supportingMeta,
+            $_FILES,
+            $removeIds
+        );
+        updateSubmissionSupportingDocsByUid($submissionUid, $supportingDocs);
+
         $response['success'] = true;
         $response['message'] = 'Images uploaded';
         $response['submissionUid'] = $submissionUid;
         $response['imagesUploaded'] = !empty($imagePaths);
+        $response['supportingDocsCount'] = supporting_docs_count($supportingDocs);
         liveLog('Upload step completed for ' . $submissionUid);
         echo json_encode($response);
         exit;
@@ -113,6 +131,21 @@ try {
         if (!empty($newImagePaths)) {
             updateSubmissionImagesByUid($submissionUid, $mergedImagePaths);
         }
+
+        // Supporting docs — server-only. Merge client-side adds/removes, persist.
+        // (Never passed to any cse_* function; that loop only sees $mergedImagePaths.)
+        $existingSupporting = $submission['supporting_documents'] ?? [];
+        $supportingMeta = $_POST['supporting_meta'] ?? null;
+        $removeIds = isset($_POST['supporting_remove']) && is_array($_POST['supporting_remove'])
+            ? $_POST['supporting_remove'] : [];
+        $supportingDocs = supporting_docs_apply_request(
+            $submissionUid,
+            $existingSupporting,
+            $supportingMeta,
+            $_FILES,
+            $removeIds
+        );
+        updateSubmissionSupportingDocsByUid($submissionUid, $supportingDocs);
 
         // Push to CSE as a new account (Status=1, AccountID=0).
         $pushResult = cse_pushPendingToApi($formData, $mergedImagePaths);
@@ -236,6 +269,45 @@ function updateSubmissionImagesByUid(string $submissionUid, array $imagePaths): 
 }
 
 /**
+ * Read the supporting_documents JSON column for a submission. Returns the
+ * normalised array structure (always has a top-level `categories` key).
+ */
+function loadSubmissionSupportingDocsByUid(string $submissionUid): array {
+    try {
+        $pdo = getDb();
+        $stmt = $pdo->prepare('SELECT supporting_documents FROM cds_submissions WHERE submission_uid = ? LIMIT 1');
+        $stmt->execute([$submissionUid]);
+        $raw = $stmt->fetchColumn();
+        return supporting_docs_normalize($raw);
+    } catch (Throwable $e) {
+        liveLog('Load supporting_documents failed: ' . $e->getMessage(), 'error');
+        return supporting_docs_empty();
+    }
+}
+
+/**
+ * Persist the supporting_documents JSON for a submission.
+ *
+ * NOTE: This data is server-only. cse_uploadImages() iterates a hardcoded
+ * whitelist on `image_paths` (selfie/nic_front/nic_back/passport), so values
+ * stored here are guaranteed never to be pushed to CSE. Do not wire any
+ * cse_* call against this column.
+ */
+function updateSubmissionSupportingDocsByUid(string $submissionUid, array $docs): void {
+    try {
+        $pdo = getDb();
+        $stmt = $pdo->prepare('UPDATE cds_submissions SET supporting_documents = ?, updated_at = NOW() WHERE submission_uid = ?');
+        $stmt->execute([json_encode($docs, JSON_UNESCAPED_UNICODE), $submissionUid]);
+        if ($stmt->rowCount() > 0) {
+            liveLog('Updated supporting_documents in DB: submission_uid=' . $submissionUid
+                . ' files=' . supporting_docs_count($docs));
+        }
+    } catch (Throwable $e) {
+        liveLog('DB supporting_documents update failed: ' . $e->getMessage(), 'error');
+    }
+}
+
+/**
  * Validate a raw edit-link token and stamp last_used_at.
  *
  * The token is reusable until either (a) it expires, or (b) the underlying
@@ -253,7 +325,7 @@ function consumeEditTokenForClient(string $rawToken): ?array {
         $pdo->beginTransaction();
         $stmt = $pdo->prepare(
             'SELECT t.id, t.submission_id, t.expires_at,'
-            . ' s.submission_uid, s.form_data, s.image_paths, s.status'
+            . ' s.submission_uid, s.form_data, s.image_paths, s.supporting_documents, s.status'
             . ' FROM submission_edit_tokens t'
             . ' INNER JOIN cds_submissions s ON s.id = t.submission_id'
             . ' WHERE t.token_hash = ? FOR UPDATE'
@@ -281,6 +353,7 @@ function consumeEditTokenForClient(string $rawToken): ?array {
                 'submission_uid' => $row['submission_uid'],
                 'form_data' => json_decode($row['form_data'] ?: '[]', true) ?: [],
                 'image_paths' => json_decode($row['image_paths'] ?: '[]', true) ?: [],
+                'supporting_documents' => supporting_docs_normalize($row['supporting_documents'] ?? null),
                 'status' => $row['status'],
             ],
         ];
