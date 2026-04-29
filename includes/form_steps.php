@@ -79,7 +79,7 @@
 
                             <div class="form-group">
                                 <label for="NameDenoInitials" class="required">Name Denoted by Initials</label>
-                                <input type="text" id="NameDenoInitials" name="NameDenoInitials" maxlength="160" required  placeholder="M. P. S. A. Perera">
+                                <input type="text" id="NameDenoInitials" name="NameDenoInitials" maxlength="160" required  placeholder="Mahesh Pradeep Suranga Anuradha">
                                 <div class="error-message">Please enter full name</div>
                             </div>
                         </div>
