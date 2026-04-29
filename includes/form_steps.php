@@ -78,7 +78,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label for="NameDenoInitials" class="required">Full Name (Denoted by Initials)</label>
+                                <label for="NameDenoInitials" class="required">Name Denoted by Initials</label>
                                 <input type="text" id="NameDenoInitials" name="NameDenoInitials" maxlength="160" required  placeholder="M. P. S. A. Perera">
                                 <div class="error-message">Please enter full name</div>
                             </div>
